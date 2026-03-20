@@ -1,245 +1,242 @@
-# Dynamic Spark Pipeline
+# Insurance Product Pricing Validator
 
-Config-driven PySpark pipeline that reads source data, applies validations and transformations, then writes outputs to one or more sinks.
+## Overview
 
-## Project Structure
+This solution validates and corrects insurance product pricing according to established business rules. The system ensures that all prices maintain proper relationships across product types, coverage variants, and deductible levels.
 
-```text
-.
-├── .dockerignore
-├── .env
-├── .gitignore
-├── Dockerfile
-├── docker-compose.yml
-├── dags/
-│   └── dynamic_spark_pipeline_dag.py
-├── data/
-│   ├── input.json
-│   └── output/
-├── metadata/
-│   └── config.json
-└── src/
-		├── engine.py
-		├── logger.py
-		├── main.py
-		├── transformer.py
-		├── validations.py
-		├── validator.py
-		└── writer.py
+## Insurance Products
+
+The pricing validator handles three main insurance product categories:
+
+### Product Hierarchy
+
+1. **MTPL (Motor Third Party Liability)** - Mandatory basic coverage at the lowest price point
+2. **Limited Casco** - Extends MTPL with additional risk coverage (theft, etc.)
+3. **Casco** - Full comprehensive coverage including own vehicle damages
+
+The pricing relationship is: **MTPL < Limited Casco < Casco**
+
+### Coverage Variants
+
+For Limited Casco and Casco products, customers can choose from four coverage variants:
+
+- **Compact** - Most economical option
+- **Basic** - Standard coverage level
+- **Comfort** - Enhanced coverage
+- **Premium** - Maximum coverage
+
+Typical pricing: **Compact/Basic < Comfort < Premium**
+
+*Note: Compact and Basic pricing may vary relative to each other as they serve different customer segments.*
+
+### Deductible Options
+
+Customers can select their preferred deductible amount (the cost they bear in case of a claim):
+
+- **100€** - No out-of-pocket cost, full premium
+- **200€** - Moderate deductible
+- **500€** - Higher deductible, lower premium
+
+Higher deductibles result in lower premiums: **100€ > 200€ > 500€ (in price)**
+
+---
+
+## Validation Rules
+
+The validator enforces three primary pricing constraints:
+
+### Rule 1: Product Level Consistency
+
+Ensures that base MTPL is the cheapest option, followed by Limited Casco, then Casco.
+
+**Logic:** For identical variants and deductibles, prices must satisfy:
+```
+MTPL < Limited Casco < Casco
 ```
 
-## How It Works
+**Example:** 
+- MTPL: 400€
+- Limited Casco (Basic, 100€ deductible): 900€
+- Casco (Basic, 100€ deductible): 1050€
 
-1. `src/main.py` creates a Spark session and loads `metadata/config.json`.
-2. `src/engine.py` executes the first dataflow in `config["dataflows"]`:
-	 - reads all `sources`
-	 - executes `transformations` in order
-	 - writes `sinks`
-3. Validation step (`validate_fields`) splits records into:
-	 - `validation_ok`
-	 - `validation_ko`
-4. Transformation step (`add_fields`) can currently add fields via `current_timestamp`.
+### Rule 2: Variant Hierarchy Consistency
 
-## Configuration Contract
+Within the same product and deductible, coverage variants must be ordered by price to reflect their enhanced benefits.
 
-The pipeline expects a JSON config with this top-level structure:
+**Logic:** For a fixed product and deductible:
+```
+Basic < Comfort < Premium
+```
 
-```json
-{
-	"dataflows": [
-		{
-			"name": "string",
-			"sources": [
-				{
-					"name": "string",
-					"format": "JSON|PARQUET|...",
-					"path": "input path"
-				}
-			],
-			"transformations": [
-				{
-					"name": "validation",
-					"type": "validate_fields",
-					"params": {
-						"input": "source_name",
-						"validations": [
-							{
-								"field": "column_name",
-								"validations": ["notEmpty", "notNull"]
-							}
-						]
-					}
-				},
-				{
-					"name": "add_ingestion_date",
-					"type": "add_fields",
-					"params": {
-						"input": "validation_ok",
-						"addFields": [
-							{
-								"name": "ingestion_dt",
-								"function": "current_timestamp"
-							}
-						]
-					}
-				}
-			],
-			"sinks": [
-				{
-					"name": "raw-ok",
-					"input": "add_ingestion_date",
-					"format": "JSON",
-					"saveMode": "OVERWRITE",
-					"paths": ["output path"]
-				}
-			]
-		}
-	]
+**Example (Limited Casco, 100€ deductible):**
+- Basic: 900€
+- Comfort: 950€
+- Premium: 1100€
+
+### Rule 3: Deductible Inverse Relationship
+
+Higher deductibles reduce the premium because customers assume more risk.
+
+**Logic:** For a fixed product and variant:
+```
+100€ deductible > 200€ deductible > 500€ deductible (in price)
+```
+
+**Example (Limited Casco, Basic):**
+- 100€ deductible: 900€
+- 200€ deductible: 780€
+- 500€ deductible: 600€
+
+---
+
+## Inconsistency Detection & Fixing
+
+The validator automatically detects violations and applies corrections based on business-appropriate adjustments.
+
+### Detected Issues
+
+The system identifies the following types of violations:
+
+1. **Product hierarchy violations** - A lower-tier product priced higher than a higher-tier product
+2. **Variant order violations** - A lower-variant priced at or above a higher-variant
+3. **Deductible violations** - A higher deductible (lower risk for insurer) priced higher than a lower deductible
+
+### Automatic Corrections
+
+When violations are detected, prices are adjusted using these reference adjustments:
+
+- **Deductible adjustment:** ~10% per deductible step
+  - Moving from 100€ to 200€: reduce by ~10%
+  - Moving from 200€ to 500€: reduce by ~10%
+
+- **Variant adjustment:** ~7% per variant level
+  - Compact/Basic as baseline (0%)
+  - Comfort: +7% above Basic
+  - Premium: +7% above Comfort
+
+- **Product adjustment:** ~15% per tier
+  - Limited Casco typically 15-20% above MTPL
+  - Casco typically 15% above Limited Casco
+
+### Correction Strategy
+
+The validator prioritizes the input prices as ground truth and adjusts other conflicting prices:
+- If a product is underpriced relative to another, the lower-priced one is reduced further
+- If a product is expected to be more expensive, the higher-tier product is increased
+- Explanations are provided for each correction, documenting the business reasoning
+
+---
+
+## Algorithm Workflow
+
+### Step 1: Parse Product Keys
+
+The input dictionary uses string keys that encode product, variant, and deductible information:
+- `mtpl` → MTPL base product
+- `limited_casco_basic_100` → Limited Casco, Basic variant, 100€ deductible
+- `casco_premium_500` → Casco, Premium variant, 500€ deductible
+
+Each key is parsed into structured components for validation.
+
+### Step 2: Extract and Group Prices
+
+Prices are grouped by:
+- Product type (MTPL, Limited Casco, Casco)
+- Variant level (Compact, Basic, Comfort, Premium)
+- Deductible amount (100, 200, 500)
+
+This allows systematic comparison across dimensions.
+
+### Step 3: Validate and Fix
+
+#### Product Level Validation
+For each combination of variant and deductible, compare prices across product types:
+- MTPL should be the lowest
+- Limited Casco should be higher than MTPL
+- Casco should be the highest
+
+If violations occur, the highest-tier product is increased to maintain prominence.
+
+#### Variant Hierarchy Validation
+For each product and deductible, ensure variants follow increasing prices:
+- Comfort should exceed Basic
+- Premium should exceed Comfort
+
+Violations trigger price increases on the higher variant.
+
+#### Deductible Inverse Validation
+For each product and variant, ensure higher deductibles have lower prices:
+- 200€ deductible should be ~10% cheaper than 100€
+- 500€ deductible should be ~10% cheaper than 200€
+
+Violations are corrected by reducing the higher deductible price.
+
+### Step 4: Report Results
+
+The function returns:
+- **fixed_prices** - Corrected pricing dictionary
+- **issues** - List of detected violations
+- **explanations** - Business rationale for each correction applied
+
+---
+
+## Implementation Highlights
+
+### Design Principles
+
+1. **Simplicity** - Single-file solution with clear logic flow
+2. **Maintainability** - Helper functions for grouping and comparison
+3. **Business-Focused** - Adjustments align with insurance industry practices
+4. **Non-Destructive** - Input is deep-copied; original data remains unchanged
+
+### Key Functions
+
+- `parse_key(key)` - Extracts product, variant, and deductible from dictionary keys
+- `validate_and_fix(prices)` - Main validation and correction function
+- `find_keys()` - Helper to retrieve keys matching specific criteria
+
+### Data Integrity
+
+- Prices are validated against all three rules simultaneously
+- Corrections consider business context, not just mathematical relationships
+- Each fix is documented with its rationale
+
+---
+
+## Example Usage
+
+```python
+input_prices = {
+    "mtpl": 400,
+    "limited_casco_basic_100": 900,
+    "limited_casco_basic_200": 780,
+    "limited_casco_basic_500": 600,
+    "casco_basic_100": 1050,
+    "casco_basic_200": 950,
+    "casco_basic_500": 780,
 }
+
+result = validate_and_fix(input_prices)
+
+# Fixed prices with corrections applied
+print(result["fixed_prices"])
+
+# Issues that were detected
+print(result["issues"])
+
+# Explanations for each fix
+print(result["explanations"])
 ```
 
-## Validation Functions
+---
 
-Implemented in `src/validations.py`:
+## Business Context
 
-- `notEmpty`: value is not null and not empty string.
-- `notNull`: value is not null.
+This validator ensures that the pricing structure:
 
-Mapped via `VALIDATION_MAP` and consumed by `src/validator.py`.
+- **Maintains competitiveness** - Correct ordering prevents customer confusion and unfair pricing
+- **Reflects risk assessment** - Higher deductibles reduce insurer risk, justifying lower premiums
+- **Supports coverage hierarchy** - Premium variants with better coverage cost more
+- **Enables market segmentation** - Three distinct products serve different customer needs
 
-## Run Locally
-
-Prerequisites:
-
-- Python 3.9+
-- Java runtime compatible with your PySpark version
-
-Install dependencies:
-
-```bash
-pip install pyspark
-```
-
-Run:
-
-```bash
-python src/main.py
-```
-
-## Run with Docker
-
-The Docker image already includes Java (`openjdk-21-jre-headless`) and sets `JAVA_HOME`, so PySpark can start correctly.
-
-Build image:
-
-```bash
-docker build -t dynamic-pipeline .
-```
-
-Run container:
-
-```bash
-docker run --rm -v "$(pwd)/data:/app/data" dynamic-pipeline
-```
-
-If your config uses absolute `/data/...` paths, mount to `/data` instead:
-
-```bash
-docker run --rm -v "$(pwd)/data:/data" dynamic-pipeline
-```
-
-## Airflow Orchestration + Docker Compose
-
-A complete orchestration setup with Airflow scheduler, webserver, PostgreSQL backend, and integrated Spark runtime.
-
-### Features
-
-- **Airflow DAG** (`dags/dynamic_spark_pipeline_dag.py`):
-  - Daily scheduling at 2 AM (configurable via `schedule_interval`)
-  - Pre-flight config validation
-  - Pipeline execution with streaming logs
-  - Output validation (checks `_SUCCESS` markers)
-  - Automated statistics logging
-  - Retry logic (2 retries on failure)
-
-- **Docker Compose Stack**:
-  - PostgreSQL 15 for Airflow metadata
-  - Airflow Webserver on `http://localhost:8080`
-  - Airflow Scheduler with continuous task monitoring
-  - Spark-ready Python runtime
-
-- **Logging & Monitoring**:
-  - Rotating file logs (10 MB max per file, 5 backups)
-  - Console + file output to `/var/log/airflow/pipeline.log`
-  - Task-level logging in Airflow UI
-  - Pipeline execution statistics
-
-### Quick Start
-
-1. **Start the stack**:
-   ```bash
-   docker-compose up -d
-   ```
-   First run initializes the database (~30 seconds).
-
-2. **Verify services**:
-   ```bash
-   docker-compose ps
-   ```
-   All services should show "healthy" within 2–3 minutes.
-
-3. **Access Airflow UI**:
-   - Navigate to `http://localhost:8080`
-   - Login: `admin` / `admin`
-   - Find DAG: `dynamic_spark_pipeline`
-
-4. **Manually trigger the DAG**:
-   ```bash
-   docker-compose exec airflow-scheduler airflow dags trigger dynamic_spark_pipeline
-   ```
-
-5. **View logs**:
-   ```bash
-   # Scheduler logs
-   docker-compose logs -f airflow-scheduler
-   
-   # Webserver logs
-   docker-compose logs -f airflow-webserver
-   
-   # Pipeline output
-   docker-compose exec airflow-scheduler tail -f /app/airflow/logs/dynamic_spark_pipeline/*/run/*.log
-   ```
-
-6. **Stop the stack**:
-   ```bash
-   docker-compose down
-   ```
-   (Data persists in volumes; re-run `docker-compose up -d` to resume)
-
-### Configuration
-
-Edit `.env` for environment variables or `docker-compose.yml` to adjust:
-- Schedule interval (default: `0 2 * * *`)
-- Log rotation size (default: 10 MB)
-- Database credentials and ports
-
-### Troubleshooting
-
-**Webserver not responding**: Wait 30–60 seconds for PostgreSQL migration. Check logs:
-```bash
-docker-compose logs airflow-webserver
-```
-
-**Task fails with "config file not found"**: Verify `metadata/config.json` exists at the repo root.
-
-**Out of disk space**: Clean up old Docker logs:
-```bash
-docker-compose down -v  # Warning: deletes all volumes
-```
-
-### Customization
-
-- **Change schedule**: Edit `schedule_interval` in `dags/dynamic_spark_pipeline_dag.py`
-- **Add alerts**: Add email or Slack notifications to the DAG (see Airflow documentation)
-- **Scale Spark**: Replace `spark-master` service with a full Spark cluster image (e.g., `bitnami/spark`)
-- **Additional transformations**: Modify `metadata/config.json` dataflow definitions
+The automatic correction feature ensures that pricing remains internally consistent and aligned with industry best practices.
