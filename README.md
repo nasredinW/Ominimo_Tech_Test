@@ -6,11 +6,21 @@ Config-driven PySpark pipeline that reads source data, applies validations and t
 
 ```text
 .
+├── .dockerignore
+├── .env
+├── .gitignore
 ├── Dockerfile
+├── docker-compose.yml
+├── dags/
+│   └── dynamic_spark_pipeline_dag.py
+├── data/
+│   ├── input.json
+│   └── output/
 ├── metadata/
 │   └── config.json
 └── src/
 		├── engine.py
+		├── logger.py
 		├── main.py
 		├── transformer.py
 		├── validations.py
@@ -138,4 +148,98 @@ If your config uses absolute `/data/...` paths, mount to `/data` instead:
 docker run --rm -v "$(pwd)/data:/data" dynamic-pipeline
 ```
 
-next : prepare Airflow DAG for orchestration
+## Airflow Orchestration + Docker Compose
+
+A complete orchestration setup with Airflow scheduler, webserver, PostgreSQL backend, and integrated Spark runtime.
+
+### Features
+
+- **Airflow DAG** (`dags/dynamic_spark_pipeline_dag.py`):
+  - Daily scheduling at 2 AM (configurable via `schedule_interval`)
+  - Pre-flight config validation
+  - Pipeline execution with streaming logs
+  - Output validation (checks `_SUCCESS` markers)
+  - Automated statistics logging
+  - Retry logic (2 retries on failure)
+
+- **Docker Compose Stack**:
+  - PostgreSQL 15 for Airflow metadata
+  - Airflow Webserver on `http://localhost:8080`
+  - Airflow Scheduler with continuous task monitoring
+  - Spark-ready Python runtime
+
+- **Logging & Monitoring**:
+  - Rotating file logs (10 MB max per file, 5 backups)
+  - Console + file output to `/var/log/airflow/pipeline.log`
+  - Task-level logging in Airflow UI
+  - Pipeline execution statistics
+
+### Quick Start
+
+1. **Start the stack**:
+   ```bash
+   docker-compose up -d
+   ```
+   First run initializes the database (~30 seconds).
+
+2. **Verify services**:
+   ```bash
+   docker-compose ps
+   ```
+   All services should show "healthy" within 2–3 minutes.
+
+3. **Access Airflow UI**:
+   - Navigate to `http://localhost:8080`
+   - Login: `admin` / `admin`
+   - Find DAG: `dynamic_spark_pipeline`
+
+4. **Manually trigger the DAG**:
+   ```bash
+   docker-compose exec airflow-scheduler airflow dags trigger dynamic_spark_pipeline
+   ```
+
+5. **View logs**:
+   ```bash
+   # Scheduler logs
+   docker-compose logs -f airflow-scheduler
+   
+   # Webserver logs
+   docker-compose logs -f airflow-webserver
+   
+   # Pipeline output
+   docker-compose exec airflow-scheduler tail -f /app/airflow/logs/dynamic_spark_pipeline/*/run/*.log
+   ```
+
+6. **Stop the stack**:
+   ```bash
+   docker-compose down
+   ```
+   (Data persists in volumes; re-run `docker-compose up -d` to resume)
+
+### Configuration
+
+Edit `.env` for environment variables or `docker-compose.yml` to adjust:
+- Schedule interval (default: `0 2 * * *`)
+- Log rotation size (default: 10 MB)
+- Database credentials and ports
+
+### Troubleshooting
+
+**Webserver not responding**: Wait 30–60 seconds for PostgreSQL migration. Check logs:
+```bash
+docker-compose logs airflow-webserver
+```
+
+**Task fails with "config file not found"**: Verify `metadata/config.json` exists at the repo root.
+
+**Out of disk space**: Clean up old Docker logs:
+```bash
+docker-compose down -v  # Warning: deletes all volumes
+```
+
+### Customization
+
+- **Change schedule**: Edit `schedule_interval` in `dags/dynamic_spark_pipeline_dag.py`
+- **Add alerts**: Add email or Slack notifications to the DAG (see Airflow documentation)
+- **Scale Spark**: Replace `spark-master` service with a full Spark cluster image (e.g., `bitnami/spark`)
+- **Additional transformations**: Modify `metadata/config.json` dataflow definitions
