@@ -35,7 +35,7 @@ def apply_validations(df, rules):
                     f"Supported values: {sorted(VALIDATION_MAP.keys())}"
                 )
 
-            cond = func(df, field)
+            cond = func(field)
             conditions.append(cond)
             error_labels.append(when(~cond, lit(f"{field}:{validator_name}")))
 

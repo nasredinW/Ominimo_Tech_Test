@@ -1,0 +1,22 @@
+[2026-03-22T19:28:41.993+0000] {taskinstance.py:1159} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: dynamic_spark_pipeline.validate_outputs manual__2026-03-22T19:18:35.213599+00:00 [queued]>
+[2026-03-22T19:28:42.002+0000] {taskinstance.py:1159} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: dynamic_spark_pipeline.validate_outputs manual__2026-03-22T19:18:35.213599+00:00 [queued]>
+[2026-03-22T19:28:42.002+0000] {taskinstance.py:1361} INFO - Starting attempt 1 of 3
+[2026-03-22T19:28:42.015+0000] {taskinstance.py:1382} INFO - Executing <Task(PythonOperator): validate_outputs> on 2026-03-22 19:18:35.213599+00:00
+[2026-03-22T19:28:42.021+0000] {standard_task_runner.py:57} INFO - Started process 427 to run task
+[2026-03-22T19:28:42.023+0000] {standard_task_runner.py:84} INFO - Running: ['***', 'tasks', 'run', 'dynamic_spark_pipeline', 'validate_outputs', 'manual__2026-03-22T19:18:35.213599+00:00', '--job-id', '13', '--raw', '--subdir', 'DAGS_FOLDER/dynamic_spark_pipeline_dag.py', '--cfg-path', '/tmp/tmpddcqyvvz']
+[2026-03-22T19:28:42.027+0000] {standard_task_runner.py:85} INFO - Job 13: Subtask validate_outputs
+[2026-03-22T19:28:42.100+0000] {task_command.py:416} INFO - Running <TaskInstance: dynamic_spark_pipeline.validate_outputs manual__2026-03-22T19:18:35.213599+00:00 [running]> on host 3deb7b853a44
+[2026-03-22T19:28:42.222+0000] {taskinstance.py:1662} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='Nasredine ouelseti' AIRFLOW_CTX_DAG_ID='dynamic_spark_pipeline' AIRFLOW_CTX_TASK_ID='validate_outputs' AIRFLOW_CTX_EXECUTION_DATE='2026-03-22T19:18:35.213599+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-03-22T19:18:35.213599+00:00'
+[2026-03-22T19:28:42.223+0000] {taskinstance.py:1937} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.9/site-packages/airflow/operators/python.py", line 192, in execute
+    return_value = self.execute_callable()
+  File "/home/airflow/.local/lib/python3.9/site-packages/airflow/operators/python.py", line 209, in execute_callable
+    return self.python_callable(*self.op_args, **self.op_kwargs)
+  File "/app/dags/dynamic_spark_pipeline_dag.py", line 44, in validate_pipeline_outputs
+    raise FileNotFoundError(f"Missing output markers: {missing}")
+FileNotFoundError: Missing output markers: [PosixPath('/app/data/output/events/motor_policy/_SUCCESS'), PosixPath('/app/data/output/discards/motor_policy/_SUCCESS')]
+[2026-03-22T19:28:42.240+0000] {taskinstance.py:1400} INFO - Marking task as UP_FOR_RETRY. dag_id=dynamic_spark_pipeline, task_id=validate_outputs, execution_date=20260322T191835, start_date=20260322T192841, end_date=20260322T192842
+[2026-03-22T19:28:42.252+0000] {standard_task_runner.py:104} ERROR - Failed to execute job 13 for task validate_outputs (Missing output markers: [PosixPath('/app/data/output/events/motor_policy/_SUCCESS'), PosixPath('/app/data/output/discards/motor_policy/_SUCCESS')]; 427)
+[2026-03-22T19:28:42.276+0000] {local_task_job_runner.py:228} INFO - Task exited with return code 1
+[2026-03-22T19:28:42.309+0000] {taskinstance.py:2778} INFO - 0 downstream tasks scheduled from follow-on schedule check

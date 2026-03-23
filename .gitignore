@@ -14,8 +14,8 @@ env/
 .ruff_cache/
 
 # Environment files
-.env
-.env.*
+#env
+#.env.*
 
 # OS/editor files
 .DS_Store

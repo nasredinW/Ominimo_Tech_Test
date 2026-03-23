@@ -1,6 +1,5 @@
 from reader import read_source
-from validator import apply_validations
-from transformer import apply_transformations
+from transformers_registry import get_transformation_handler, list_available_transformations
 from writer import write_output
 
 
@@ -24,38 +23,44 @@ class PipelineEngine:
             df = read_source(self.spark, source)
             self.dataframes[source_name] = df
 
-        # 2. Transformations
+        # 2. Transformations (dynamically dispatched via registry)
         for step in flow.get("transformations", []):
             step_type = step.get("type")
+            step_name = step.get("name", "unnamed")
             params = step.get("params", {})
             input_name = params.get("input")
 
             if input_name not in self.dataframes:
                 raise KeyError(
-                    f"Transformation '{step.get('name', 'unnamed')}' references missing input dataframe '{input_name}'"
+                    f"Transformation '{step_name}' references missing input dataframe '{input_name}'"
                 )
 
-            if step_type == "validate_fields":
-                ok_df, ko_df = apply_validations(
-                    self.dataframes[input_name],
-                    params.get("validations", [])
-                )
-                self.dataframes["validation_ok"] = ok_df
-                self.dataframes["validation_ko"] = ko_df
-
-            elif step_type == "add_fields":
-                df = apply_transformations(
-                    self.dataframes[input_name],
-                    params.get("addFields", [])
-                )
-                output_name = step.get("name")
-                if not output_name:
-                    raise ValueError("add_fields transformation must define a non-empty 'name'")
-                self.dataframes[output_name] = df
-            else:
+            # Get the handler class from the registry
+            handler_class = get_transformation_handler(step_type)
+            if not handler_class:
+                available = list_available_transformations()
                 raise ValueError(
-                    f"Unsupported transformation type '{step_type}' in step '{step.get('name', 'unnamed')}'"
+                    f"Unsupported transformation type '{step_type}' in step '{step_name}'. "
+                    f"Available types: {', '.join(available)}"
                 )
+
+            # Execute the transformation using the handler
+            try:
+                handler = handler_class(self.spark, self.dataframes[input_name], params)
+                result = handler.execute()
+                
+                # Special handling for validate_fields which returns two dataframes
+                if step_type == "validate_fields":
+                    ok_df, ko_df = result
+                    self.dataframes["validation_ok"] = ok_df
+                    self.dataframes["validation_ko"] = ko_df
+                else:
+                    # Store the result under the transformation's name
+                    if not step_name:
+                        raise ValueError(f"Transformation of type '{step_type}' must define a non-empty 'name'")
+                    self.dataframes[step_name] = result
+            except Exception as exc:
+                raise RuntimeError(f"Transformation '{step_name}' (type '{step_type}') failed: {exc}") from exc
 
         # 3. Write outputs
         for sink in flow.get("sinks", []):

@@ -1,0 +1,46 @@
+[2026-03-22T23:38:38.336+0000] {taskinstance.py:1159} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: dynamic_spark_pipeline.run_pipeline manual__2026-03-22T23:38:30+00:00 [queued]>
+[2026-03-22T23:38:38.346+0000] {taskinstance.py:1159} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: dynamic_spark_pipeline.run_pipeline manual__2026-03-22T23:38:30+00:00 [queued]>
+[2026-03-22T23:38:38.347+0000] {taskinstance.py:1361} INFO - Starting attempt 1 of 3
+[2026-03-22T23:38:38.377+0000] {taskinstance.py:1382} INFO - Executing <Task(BashOperator): run_pipeline> on 2026-03-22 23:38:30+00:00
+[2026-03-22T23:38:38.382+0000] {standard_task_runner.py:57} INFO - Started process 263 to run task
+[2026-03-22T23:38:38.385+0000] {standard_task_runner.py:84} INFO - Running: ['***', 'tasks', 'run', 'dynamic_spark_pipeline', 'run_pipeline', 'manual__2026-03-22T23:38:30+00:00', '--job-id', '73', '--raw', '--subdir', 'DAGS_FOLDER/dynamic_spark_pipeline_dag.py', '--cfg-path', '/tmp/tmp58ub5iet']
+[2026-03-22T23:38:38.387+0000] {standard_task_runner.py:85} INFO - Job 73: Subtask run_pipeline
+[2026-03-22T23:38:38.482+0000] {task_command.py:416} INFO - Running <TaskInstance: dynamic_spark_pipeline.run_pipeline manual__2026-03-22T23:38:30+00:00 [running]> on host 011860dce954
+[2026-03-22T23:38:38.662+0000] {taskinstance.py:1662} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='Nasredine Ouelseti' AIRFLOW_CTX_DAG_ID='dynamic_spark_pipeline' AIRFLOW_CTX_TASK_ID='run_pipeline' AIRFLOW_CTX_EXECUTION_DATE='2026-03-22T23:38:30+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-03-22T23:38:30+00:00'
+[2026-03-22T23:38:38.664+0000] {subprocess.py:63} INFO - Tmp dir root location: /tmp
+[2026-03-22T23:38:38.664+0000] {subprocess.py:75} INFO - Running command: ['/bin/bash', '-c', '\nset -e\n\necho "Starting Spark pipeline execution..."\necho "Configuration: /app/metadata/config.json"\necho "Data path: /app/data"\necho "Script: /app/src/main.py"\necho "Log path: /app/***/logs/pipeline"\n\n# Pre-create critical directories with proper error handling\necho "Preparing directories..."\nLOG_DIR_BACKUP="/tmp/***_logs"\n\n# Try to create log directory with primary path\nif mkdir -p "/app/***/logs/pipeline" 2>/dev/null && touch "/app/***/logs/pipeline/.write_test" 2>/dev/null; then\n    echo "✓ Using primary log path: /app/***/logs/pipeline"\n    rm -f "/app/***/logs/pipeline/.write_test"\nelse\n    echo "⚠ Primary log path not writable, using backup: \\$LOG_DIR_BACKUP"\n    mkdir -p "\\$LOG_DIR_BACKUP"\n    mkdir -p "/app/data/output" 2>/dev/null || true\nfi\n\n# Create data output directory (non-critical)\nmkdir -p "/app/data/output" 2>/dev/null || echo "⚠ Warning: Could not create data output directory"\n\n# Set effective log path for the script\nexport LOG_PATH_EFFECTIVE="/app/***/logs/pipeline"\nif [ ! -w "/app/***/logs/pipeline" ]; then\n    export LOG_PATH_EFFECTIVE="\\$LOG_DIR_BACKUP"\nfi\n\necho "Effective log path: \\$LOG_PATH_EFFECTIVE"\n\n# Change to application home directory\nif [ -d "/app" ]; then\n    cd "/app"\n    echo "✓ Changed to: /app"\nelse\n    echo "✗ Application directory not found: /app"\n    exit 1\nfi\n\n# Run the pipeline script\necho "Executing pipeline script..."\npython "/app/src/main.py" 2>&1 | tee -a "\\$LOG_PATH_EFFECTIVE/pipeline.log" || true\n\n# Capture exit code\nEXIT_CODE=${PIPESTATUS[0]}\n\n# Report results\necho ""\necho "Pipeline execution completed with exit code: \\$EXIT_CODE"\n\nif [ \\$EXIT_CODE -eq 0 ]; then\n    echo "✓ Pipeline executed successfully"\n    exit 0\nelse\n    echo "✗ Pipeline failed with errors (see logs above)"\n    exit \\$EXIT_CODE\nfi\n        ']
+[2026-03-22T23:38:38.677+0000] {subprocess.py:86} INFO - Output:
+[2026-03-22T23:38:38.683+0000] {subprocess.py:93} INFO - Starting Spark pipeline execution...
+[2026-03-22T23:38:38.684+0000] {subprocess.py:93} INFO - Configuration: /app/metadata/config.json
+[2026-03-22T23:38:38.684+0000] {subprocess.py:93} INFO - Data path: /app/data
+[2026-03-22T23:38:38.684+0000] {subprocess.py:93} INFO - Script: /app/src/main.py
+[2026-03-22T23:38:38.684+0000] {subprocess.py:93} INFO - Log path: /app/***/logs/pipeline
+[2026-03-22T23:38:38.685+0000] {subprocess.py:93} INFO - Preparing directories...
+[2026-03-22T23:38:38.700+0000] {subprocess.py:93} INFO - ✓ Using primary log path: /app/***/logs/pipeline
+[2026-03-22T23:38:38.705+0000] {subprocess.py:93} INFO - Effective log path: $LOG_PATH_EFFECTIVE
+[2026-03-22T23:38:38.706+0000] {subprocess.py:93} INFO - ✓ Changed to: /app
+[2026-03-22T23:38:38.706+0000] {subprocess.py:93} INFO - Executing pipeline script...
+[2026-03-22T23:38:38.707+0000] {subprocess.py:93} INFO - tee: '$LOG_PATH_EFFECTIVE/pipeline.log': No such file or directory
+[2026-03-22T23:38:39.548+0000] {subprocess.py:93} INFO - 2026-03-22 23:38:39,548 - __main__ - INFO - Starting Dynamic Spark Pipeline...
+[2026-03-22T23:38:39.550+0000] {subprocess.py:93} INFO - 2026-03-22 23:38:39,550 - __main__ - INFO - Loading config from metadata/config.json
+[2026-03-22T23:38:39.550+0000] {subprocess.py:93} INFO - 2026-03-22 23:38:39,550 - __main__ - INFO - Creating Spark session...
+[2026-03-22T23:38:40.107+0000] {subprocess.py:93} INFO - Error: LinkageError occurred while loading main class org.apache.spark.launcher.Main
+[2026-03-22T23:38:40.108+0000] {subprocess.py:93} INFO - 	java.lang.UnsupportedClassVersionError: org/apache/spark/launcher/Main has been compiled by a more recent version of the Java Runtime (class file version 61.0), this version of the Java Runtime only recognizes class file versions up to 55.0
+[2026-03-22T23:38:40.113+0000] {subprocess.py:93} INFO - /home/***/.local/lib/python3.9/site-packages/pyspark/bin/spark-class: line 97: CMD: bad array subscript
+[2026-03-22T23:38:40.173+0000] {subprocess.py:93} INFO - 2026-03-22 23:38:40,172 - __main__ - CRITICAL - Fatal error: [JAVA_GATEWAY_EXITED] Java gateway process exited before sending its port number.
+[2026-03-22T23:38:40.174+0000] {subprocess.py:93} INFO - Pipeline execution failed: [JAVA_GATEWAY_EXITED] Java gateway process exited before sending its port number.
+[2026-03-22T23:38:40.240+0000] {subprocess.py:93} INFO - 
+[2026-03-22T23:38:40.241+0000] {subprocess.py:93} INFO - Pipeline execution completed with exit code: $EXIT_CODE
+[2026-03-22T23:38:40.241+0000] {subprocess.py:93} INFO - /bin/bash: line 55: [: $EXIT_CODE: integer expression expected
+[2026-03-22T23:38:40.241+0000] {subprocess.py:93} INFO - ✗ Pipeline failed with errors (see logs above)
+[2026-03-22T23:38:40.241+0000] {subprocess.py:93} INFO - /bin/bash: line 60: exit: $EXIT_CODE: numeric argument required
+[2026-03-22T23:38:40.241+0000] {subprocess.py:97} INFO - Command exited with return code 2
+[2026-03-22T23:38:40.262+0000] {taskinstance.py:1937} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.9/site-packages/airflow/operators/bash.py", line 210, in execute
+    raise AirflowException(
+airflow.exceptions.AirflowException: Bash command failed. The command returned a non-zero exit code 2.
+[2026-03-22T23:38:40.267+0000] {taskinstance.py:1400} INFO - Marking task as UP_FOR_RETRY. dag_id=dynamic_spark_pipeline, task_id=run_pipeline, execution_date=20260322T233830, start_date=20260322T233838, end_date=20260322T233840
+[2026-03-22T23:38:40.286+0000] {standard_task_runner.py:104} ERROR - Failed to execute job 73 for task run_pipeline (Bash command failed. The command returned a non-zero exit code 2.; 263)
+[2026-03-22T23:38:40.322+0000] {local_task_job_runner.py:228} INFO - Task exited with return code 1
+[2026-03-22T23:38:40.369+0000] {taskinstance.py:2778} INFO - 0 downstream tasks scheduled from follow-on schedule check

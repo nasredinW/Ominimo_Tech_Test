@@ -1,9 +1,9 @@
 from pyspark.sql.functions import col
 
-def not_empty(df, column):
+def not_empty(column):
     return col(column).isNotNull() & (col(column) != "")
 
-def not_null(df, column):
+def not_null(column):
     return col(column).isNotNull()
 
 VALIDATION_MAP = {

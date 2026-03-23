@@ -26,7 +26,7 @@
                 {
                     "format": "JSON",
                     "name": "policy_inputs",
-                    "path": "data/input.json"
+                    "path": "data/input/input.json"
                 }
             ],
             "transformations": [

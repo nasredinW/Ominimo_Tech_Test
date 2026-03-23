@@ -1,0 +1,100 @@
+[2026-03-22T19:28:40.757+0000] {taskinstance.py:1159} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: dynamic_spark_pipeline.run_pipeline scheduled__2026-03-21T02:00:00+00:00 [queued]>
+[2026-03-22T19:28:40.767+0000] {taskinstance.py:1159} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: dynamic_spark_pipeline.run_pipeline scheduled__2026-03-21T02:00:00+00:00 [queued]>
+[2026-03-22T19:28:40.767+0000] {taskinstance.py:1361} INFO - Starting attempt 3 of 3
+[2026-03-22T19:28:40.782+0000] {taskinstance.py:1382} INFO - Executing <Task(BashOperator): run_pipeline> on 2026-03-21 02:00:00+00:00
+[2026-03-22T19:28:40.787+0000] {standard_task_runner.py:57} INFO - Started process 417 to run task
+[2026-03-22T19:28:40.790+0000] {standard_task_runner.py:84} INFO - Running: ['***', 'tasks', 'run', 'dynamic_spark_pipeline', 'run_pipeline', 'scheduled__2026-03-21T02:00:00+00:00', '--job-id', '11', '--raw', '--subdir', 'DAGS_FOLDER/dynamic_spark_pipeline_dag.py', '--cfg-path', '/tmp/tmp48tvta_k']
+[2026-03-22T19:28:40.792+0000] {standard_task_runner.py:85} INFO - Job 11: Subtask run_pipeline
+[2026-03-22T19:28:40.859+0000] {task_command.py:416} INFO - Running <TaskInstance: dynamic_spark_pipeline.run_pipeline scheduled__2026-03-21T02:00:00+00:00 [running]> on host 3deb7b853a44
+[2026-03-22T19:28:40.980+0000] {taskinstance.py:1662} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='Nasredine ouelseti' AIRFLOW_CTX_DAG_ID='dynamic_spark_pipeline' AIRFLOW_CTX_TASK_ID='run_pipeline' AIRFLOW_CTX_EXECUTION_DATE='2026-03-21T02:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='3' AIRFLOW_CTX_DAG_RUN_ID='scheduled__2026-03-21T02:00:00+00:00'
+[2026-03-22T19:28:40.981+0000] {subprocess.py:63} INFO - Tmp dir root location: /tmp
+[2026-03-22T19:28:40.982+0000] {subprocess.py:75} INFO - Running command: ['/bin/bash', '-c', '\n        set -e\n        cd /app\n        python src/main.py 2>&1 | tee -a /var/log/***/pipeline.log\n        echo "Pipeline execution completed"\n        ']
+[2026-03-22T19:28:40.994+0000] {subprocess.py:86} INFO - Output:
+[2026-03-22T19:28:40.999+0000] {subprocess.py:93} INFO - tee: /var/log/***/pipeline.log: No such file or directory
+[2026-03-22T19:28:41.177+0000] {subprocess.py:93} INFO - Traceback (most recent call last):
+[2026-03-22T19:28:41.178+0000] {subprocess.py:93} INFO -   File "/app/src/main.py", line 4, in <module>
+[2026-03-22T19:28:41.178+0000] {subprocess.py:93} INFO -     from pyspark.sql import SparkSession
+[2026-03-22T19:28:41.178+0000] {subprocess.py:93} INFO - ModuleNotFoundError: No module named 'pyspark'
+[2026-03-22T19:28:41.183+0000] {subprocess.py:97} INFO - Command exited with return code 1
+[2026-03-22T19:28:41.202+0000] {taskinstance.py:1937} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.9/site-packages/airflow/operators/bash.py", line 210, in execute
+    raise AirflowException(
+airflow.exceptions.AirflowException: Bash command failed. The command returned a non-zero exit code 1.
+[2026-03-22T19:28:41.206+0000] {taskinstance.py:1400} INFO - Marking task as FAILED. dag_id=dynamic_spark_pipeline, task_id=run_pipeline, execution_date=20260321T020000, start_date=20260322T192840, end_date=20260322T192841
+[2026-03-22T19:28:41.222+0000] {standard_task_runner.py:104} ERROR - Failed to execute job 11 for task run_pipeline (Bash command failed. The command returned a non-zero exit code 1.; 417)
+[2026-03-22T19:28:41.243+0000] {local_task_job_runner.py:228} INFO - Task exited with return code 1
+[2026-03-22T19:28:41.292+0000] {taskinstance.py:2778} INFO - 1 downstream tasks scheduled from follow-on schedule check
+[2026-03-22T19:42:08.001+0000] {taskinstance.py:1159} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: dynamic_spark_pipeline.run_pipeline scheduled__2026-03-21T02:00:00+00:00 [queued]>
+[2026-03-22T19:42:08.011+0000] {taskinstance.py:1159} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: dynamic_spark_pipeline.run_pipeline scheduled__2026-03-21T02:00:00+00:00 [queued]>
+[2026-03-22T19:42:08.011+0000] {taskinstance.py:1361} INFO - Starting attempt 3 of 3
+[2026-03-22T19:42:08.025+0000] {taskinstance.py:1382} INFO - Executing <Task(BashOperator): run_pipeline> on 2026-03-21 02:00:00+00:00
+[2026-03-22T19:42:08.031+0000] {standard_task_runner.py:57} INFO - Started process 739 to run task
+[2026-03-22T19:42:08.033+0000] {standard_task_runner.py:84} INFO - Running: ['***', 'tasks', 'run', 'dynamic_spark_pipeline', 'run_pipeline', 'scheduled__2026-03-21T02:00:00+00:00', '--job-id', '20', '--raw', '--subdir', 'DAGS_FOLDER/dynamic_spark_pipeline_dag.py', '--cfg-path', '/tmp/tmprur0b8y6']
+[2026-03-22T19:42:08.036+0000] {standard_task_runner.py:85} INFO - Job 20: Subtask run_pipeline
+[2026-03-22T19:42:08.113+0000] {task_command.py:416} INFO - Running <TaskInstance: dynamic_spark_pipeline.run_pipeline scheduled__2026-03-21T02:00:00+00:00 [running]> on host 3deb7b853a44
+[2026-03-22T19:42:08.248+0000] {taskinstance.py:1662} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='Nasredine ouelseti' AIRFLOW_CTX_DAG_ID='dynamic_spark_pipeline' AIRFLOW_CTX_TASK_ID='run_pipeline' AIRFLOW_CTX_EXECUTION_DATE='2026-03-21T02:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='3' AIRFLOW_CTX_DAG_RUN_ID='scheduled__2026-03-21T02:00:00+00:00'
+[2026-03-22T19:42:08.249+0000] {subprocess.py:63} INFO - Tmp dir root location: /tmp
+[2026-03-22T19:42:08.250+0000] {subprocess.py:75} INFO - Running command: ['/bin/bash', '-c', '\n        set -e\n        cd /app\n        python src/main.py 2>&1 | tee -a /var/log/***/pipeline.log\n        echo "Pipeline execution completed"\n        ']
+[2026-03-22T19:42:08.263+0000] {subprocess.py:86} INFO - Output:
+[2026-03-22T19:42:08.267+0000] {subprocess.py:93} INFO - tee: /var/log/***/pipeline.log: No such file or directory
+[2026-03-22T19:42:08.444+0000] {subprocess.py:93} INFO - Traceback (most recent call last):
+[2026-03-22T19:42:08.445+0000] {subprocess.py:93} INFO -   File "/app/src/main.py", line 4, in <module>
+[2026-03-22T19:42:08.445+0000] {subprocess.py:93} INFO -     from pyspark.sql import SparkSession
+[2026-03-22T19:42:08.445+0000] {subprocess.py:93} INFO - ModuleNotFoundError: No module named 'pyspark'
+[2026-03-22T19:42:08.449+0000] {subprocess.py:97} INFO - Command exited with return code 1
+[2026-03-22T19:42:08.468+0000] {taskinstance.py:1937} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.9/site-packages/airflow/operators/bash.py", line 210, in execute
+    raise AirflowException(
+airflow.exceptions.AirflowException: Bash command failed. The command returned a non-zero exit code 1.
+[2026-03-22T19:42:08.471+0000] {taskinstance.py:1400} INFO - Marking task as FAILED. dag_id=dynamic_spark_pipeline, task_id=run_pipeline, execution_date=20260321T020000, start_date=20260322T194208, end_date=20260322T194208
+[2026-03-22T19:42:08.483+0000] {standard_task_runner.py:104} ERROR - Failed to execute job 20 for task run_pipeline (Bash command failed. The command returned a non-zero exit code 1.; 739)
+[2026-03-22T19:42:08.526+0000] {local_task_job_runner.py:228} INFO - Task exited with return code 1
+[2026-03-22T19:42:08.562+0000] {taskinstance.py:2778} INFO - 1 downstream tasks scheduled from follow-on schedule check
+[2026-03-22T23:36:24.545+0000] {taskinstance.py:1159} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: dynamic_spark_pipeline.run_pipeline scheduled__2026-03-21T02:00:00+00:00 [queued]>
+[2026-03-22T23:36:24.557+0000] {taskinstance.py:1159} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: dynamic_spark_pipeline.run_pipeline scheduled__2026-03-21T02:00:00+00:00 [queued]>
+[2026-03-22T23:36:24.557+0000] {taskinstance.py:1361} INFO - Starting attempt 3 of 3
+[2026-03-22T23:36:24.572+0000] {taskinstance.py:1382} INFO - Executing <Task(BashOperator): run_pipeline> on 2026-03-21 02:00:00+00:00
+[2026-03-22T23:36:24.578+0000] {standard_task_runner.py:57} INFO - Started process 169 to run task
+[2026-03-22T23:36:24.580+0000] {standard_task_runner.py:84} INFO - Running: ['***', 'tasks', 'run', 'dynamic_spark_pipeline', 'run_pipeline', 'scheduled__2026-03-21T02:00:00+00:00', '--job-id', '69', '--raw', '--subdir', 'DAGS_FOLDER/dynamic_spark_pipeline_dag.py', '--cfg-path', '/tmp/tmp2gm258lt']
+[2026-03-22T23:36:24.583+0000] {standard_task_runner.py:85} INFO - Job 69: Subtask run_pipeline
+[2026-03-22T23:36:24.652+0000] {task_command.py:416} INFO - Running <TaskInstance: dynamic_spark_pipeline.run_pipeline scheduled__2026-03-21T02:00:00+00:00 [running]> on host 011860dce954
+[2026-03-22T23:36:24.765+0000] {taskinstance.py:1662} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='Nasredine Ouelseti' AIRFLOW_CTX_DAG_ID='dynamic_spark_pipeline' AIRFLOW_CTX_TASK_ID='run_pipeline' AIRFLOW_CTX_EXECUTION_DATE='2026-03-21T02:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='3' AIRFLOW_CTX_DAG_RUN_ID='scheduled__2026-03-21T02:00:00+00:00'
+[2026-03-22T23:36:24.766+0000] {subprocess.py:63} INFO - Tmp dir root location: /tmp
+[2026-03-22T23:36:24.766+0000] {subprocess.py:75} INFO - Running command: ['/bin/bash', '-c', '\nset -e\n\necho "Starting Spark pipeline execution..."\necho "Configuration: /app/metadata/config.json"\necho "Data path: /app/data"\necho "Script: /app/src/main.py"\necho "Log path: /app/***/logs/pipeline"\n\n# Pre-create critical directories with proper error handling\necho "Preparing directories..."\nLOG_DIR_BACKUP="/tmp/***_logs"\n\n# Try to create log directory with primary path\nif mkdir -p "/app/***/logs/pipeline" 2>/dev/null && touch "/app/***/logs/pipeline/.write_test" 2>/dev/null; then\n    echo "✓ Using primary log path: /app/***/logs/pipeline"\n    rm -f "/app/***/logs/pipeline/.write_test"\nelse\n    echo "⚠ Primary log path not writable, using backup: \\$LOG_DIR_BACKUP"\n    mkdir -p "\\$LOG_DIR_BACKUP"\n    mkdir -p "/app/data/output" 2>/dev/null || true\nfi\n\n# Create data output directory (non-critical)\nmkdir -p "/app/data/output" 2>/dev/null || echo "⚠ Warning: Could not create data output directory"\n\n# Set effective log path for the script\nexport LOG_PATH_EFFECTIVE="/app/***/logs/pipeline"\nif [ ! -w "/app/***/logs/pipeline" ]; then\n    export LOG_PATH_EFFECTIVE="\\$LOG_DIR_BACKUP"\nfi\n\necho "Effective log path: \\$LOG_PATH_EFFECTIVE"\n\n# Change to application home directory\nif [ -d "/app" ]; then\n    cd "/app"\n    echo "✓ Changed to: /app"\nelse\n    echo "✗ Application directory not found: /app"\n    exit 1\nfi\n\n# Run the pipeline script\necho "Executing pipeline script..."\npython "/app/src/main.py" 2>&1 | tee -a "\\$LOG_PATH_EFFECTIVE/pipeline.log" || true\n\n# Capture exit code\nEXIT_CODE=${PIPESTATUS[0]}\n\n# Report results\necho ""\necho "Pipeline execution completed with exit code: \\$EXIT_CODE"\n\nif [ \\$EXIT_CODE -eq 0 ]; then\n    echo "✓ Pipeline executed successfully"\n    exit 0\nelse\n    echo "✗ Pipeline failed with errors (see logs above)"\n    exit \\$EXIT_CODE\nfi\n        ']
+[2026-03-22T23:36:24.777+0000] {subprocess.py:86} INFO - Output:
+[2026-03-22T23:36:24.781+0000] {subprocess.py:93} INFO - Starting Spark pipeline execution...
+[2026-03-22T23:36:24.781+0000] {subprocess.py:93} INFO - Configuration: /app/metadata/config.json
+[2026-03-22T23:36:24.781+0000] {subprocess.py:93} INFO - Data path: /app/data
+[2026-03-22T23:36:24.781+0000] {subprocess.py:93} INFO - Script: /app/src/main.py
+[2026-03-22T23:36:24.781+0000] {subprocess.py:93} INFO - Log path: /app/***/logs/pipeline
+[2026-03-22T23:36:24.781+0000] {subprocess.py:93} INFO - Preparing directories...
+[2026-03-22T23:36:24.789+0000] {subprocess.py:93} INFO - ✓ Using primary log path: /app/***/logs/pipeline
+[2026-03-22T23:36:24.795+0000] {subprocess.py:93} INFO - Effective log path: $LOG_PATH_EFFECTIVE
+[2026-03-22T23:36:24.795+0000] {subprocess.py:93} INFO - ✓ Changed to: /app
+[2026-03-22T23:36:24.795+0000] {subprocess.py:93} INFO - Executing pipeline script...
+[2026-03-22T23:36:24.801+0000] {subprocess.py:93} INFO - tee: '$LOG_PATH_EFFECTIVE/pipeline.log': No such file or directory
+[2026-03-22T23:36:25.533+0000] {subprocess.py:93} INFO - 2026-03-22 23:36:25,533 - __main__ - INFO - Starting Dynamic Spark Pipeline...
+[2026-03-22T23:36:25.534+0000] {subprocess.py:93} INFO - 2026-03-22 23:36:25,534 - __main__ - INFO - Loading config from metadata/config.json
+[2026-03-22T23:36:25.534+0000] {subprocess.py:93} INFO - 2026-03-22 23:36:25,534 - __main__ - INFO - Creating Spark session...
+[2026-03-22T23:36:25.859+0000] {subprocess.py:93} INFO - Error: LinkageError occurred while loading main class org.apache.spark.launcher.Main
+[2026-03-22T23:36:25.860+0000] {subprocess.py:93} INFO - 	java.lang.UnsupportedClassVersionError: org/apache/spark/launcher/Main has been compiled by a more recent version of the Java Runtime (class file version 61.0), this version of the Java Runtime only recognizes class file versions up to 55.0
+[2026-03-22T23:36:25.865+0000] {subprocess.py:93} INFO - /home/***/.local/lib/python3.9/site-packages/pyspark/bin/spark-class: line 97: CMD: bad array subscript
+[2026-03-22T23:36:25.951+0000] {subprocess.py:93} INFO - 2026-03-22 23:36:25,951 - __main__ - CRITICAL - Fatal error: [JAVA_GATEWAY_EXITED] Java gateway process exited before sending its port number.
+[2026-03-22T23:36:25.952+0000] {subprocess.py:93} INFO - Pipeline execution failed: [JAVA_GATEWAY_EXITED] Java gateway process exited before sending its port number.
+[2026-03-22T23:36:26.009+0000] {subprocess.py:93} INFO - 
+[2026-03-22T23:36:26.009+0000] {subprocess.py:93} INFO - Pipeline execution completed with exit code: $EXIT_CODE
+[2026-03-22T23:36:26.010+0000] {subprocess.py:93} INFO - /bin/bash: line 55: [: $EXIT_CODE: integer expression expected
+[2026-03-22T23:36:26.010+0000] {subprocess.py:93} INFO - ✗ Pipeline failed with errors (see logs above)
+[2026-03-22T23:36:26.010+0000] {subprocess.py:93} INFO - /bin/bash: line 60: exit: $EXIT_CODE: numeric argument required
+[2026-03-22T23:36:26.010+0000] {subprocess.py:97} INFO - Command exited with return code 2
+[2026-03-22T23:36:26.029+0000] {taskinstance.py:1937} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.9/site-packages/airflow/operators/bash.py", line 210, in execute
+    raise AirflowException(
+airflow.exceptions.AirflowException: Bash command failed. The command returned a non-zero exit code 2.
+[2026-03-22T23:36:26.033+0000] {taskinstance.py:1400} INFO - Marking task as FAILED. dag_id=dynamic_spark_pipeline, task_id=run_pipeline, execution_date=20260321T020000, start_date=20260322T233624, end_date=20260322T233626
+[2026-03-22T23:36:26.049+0000] {standard_task_runner.py:104} ERROR - Failed to execute job 69 for task run_pipeline (Bash command failed. The command returned a non-zero exit code 2.; 169)
+[2026-03-22T23:36:26.076+0000] {local_task_job_runner.py:228} INFO - Task exited with return code 1
+[2026-03-22T23:36:26.113+0000] {taskinstance.py:2778} INFO - 1 downstream tasks scheduled from follow-on schedule check

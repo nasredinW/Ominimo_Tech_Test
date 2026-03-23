@@ -1,0 +1,14 @@
+[2026-03-22T19:36:34.172+0000] {taskinstance.py:1159} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: dynamic_spark_pipeline.check_config manual__2026-03-22T19:36:33.037677+00:00 [queued]>
+[2026-03-22T19:36:34.185+0000] {taskinstance.py:1159} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: dynamic_spark_pipeline.check_config manual__2026-03-22T19:36:33.037677+00:00 [queued]>
+[2026-03-22T19:36:34.185+0000] {taskinstance.py:1361} INFO - Starting attempt 1 of 3
+[2026-03-22T19:36:34.201+0000] {taskinstance.py:1382} INFO - Executing <Task(PythonOperator): check_config> on 2026-03-22 19:36:33.037677+00:00
+[2026-03-22T19:36:34.206+0000] {standard_task_runner.py:57} INFO - Started process 601 to run task
+[2026-03-22T19:36:34.209+0000] {standard_task_runner.py:84} INFO - Running: ['***', 'tasks', 'run', 'dynamic_spark_pipeline', 'check_config', 'manual__2026-03-22T19:36:33.037677+00:00', '--job-id', '16', '--raw', '--subdir', 'DAGS_FOLDER/dynamic_spark_pipeline_dag.py', '--cfg-path', '/tmp/tmptou0eff3']
+[2026-03-22T19:36:34.212+0000] {standard_task_runner.py:85} INFO - Job 16: Subtask check_config
+[2026-03-22T19:36:34.282+0000] {task_command.py:416} INFO - Running <TaskInstance: dynamic_spark_pipeline.check_config manual__2026-03-22T19:36:33.037677+00:00 [running]> on host 3deb7b853a44
+[2026-03-22T19:36:34.404+0000] {taskinstance.py:1662} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='Nasredine ouelseti' AIRFLOW_CTX_DAG_ID='dynamic_spark_pipeline' AIRFLOW_CTX_TASK_ID='check_config' AIRFLOW_CTX_EXECUTION_DATE='2026-03-22T19:36:33.037677+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-03-22T19:36:33.037677+00:00'
+[2026-03-22T19:36:34.405+0000] {dynamic_spark_pipeline_dag.py:32} INFO - Config loaded. Dataflows: ['motor-ingestion']
+[2026-03-22T19:36:34.428+0000] {python.py:194} INFO - Done. Returned value was: None
+[2026-03-22T19:36:34.448+0000] {taskinstance.py:1400} INFO - Marking task as SUCCESS. dag_id=dynamic_spark_pipeline, task_id=check_config, execution_date=20260322T193633, start_date=20260322T193634, end_date=20260322T193634
+[2026-03-22T19:36:34.502+0000] {local_task_job_runner.py:228} INFO - Task exited with return code 0
+[2026-03-22T19:36:34.558+0000] {taskinstance.py:2778} INFO - 1 downstream tasks scheduled from follow-on schedule check

@@ -1,0 +1,44 @@
+[2026-03-23T01:26:53.632+0000] {taskinstance.py:1159} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: dynamic_spark_pipeline.run_pipeline manual__2026-03-23T01:26:11+00:00 [queued]>
+[2026-03-23T01:26:53.641+0000] {taskinstance.py:1159} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: dynamic_spark_pipeline.run_pipeline manual__2026-03-23T01:26:11+00:00 [queued]>
+[2026-03-23T01:26:53.641+0000] {taskinstance.py:1361} INFO - Starting attempt 1 of 3
+[2026-03-23T01:26:53.653+0000] {taskinstance.py:1382} INFO - Executing <Task(BashOperator): run_pipeline> on 2026-03-23 01:26:11+00:00
+[2026-03-23T01:26:53.659+0000] {standard_task_runner.py:57} INFO - Started process 485 to run task
+[2026-03-23T01:26:53.661+0000] {standard_task_runner.py:84} INFO - Running: ['***', 'tasks', 'run', 'dynamic_spark_pipeline', 'run_pipeline', 'manual__2026-03-23T01:26:11+00:00', '--job-id', '7', '--raw', '--subdir', 'DAGS_FOLDER/dynamic_spark_pipeline_dag.py', '--cfg-path', '/tmp/tmpywy2z5pd']
+[2026-03-23T01:26:53.663+0000] {standard_task_runner.py:85} INFO - Job 7: Subtask run_pipeline
+[2026-03-23T01:26:53.737+0000] {task_command.py:416} INFO - Running <TaskInstance: dynamic_spark_pipeline.run_pipeline manual__2026-03-23T01:26:11+00:00 [running]> on host c58b5b3ff68c
+[2026-03-23T01:26:53.885+0000] {taskinstance.py:1662} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='Nasredine Ouelseti' AIRFLOW_CTX_DAG_ID='dynamic_spark_pipeline' AIRFLOW_CTX_TASK_ID='run_pipeline' AIRFLOW_CTX_EXECUTION_DATE='2026-03-23T01:26:11+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-03-23T01:26:11+00:00'
+[2026-03-23T01:26:53.887+0000] {subprocess.py:63} INFO - Tmp dir root location: /tmp
+[2026-03-23T01:26:53.888+0000] {subprocess.py:75} INFO - Running command: ['/bin/bash', '-c', '\nset -e\n\necho "Starting Spark pipeline execution..."\necho "Configuration: /app/metadata/config.json"\necho "Data path: /app/data"\necho "Script: /app/src/main.py"\necho "Log path: /app/***/logs/pipeline"\n\n# Pre-create critical directories with proper error handling\necho "Preparing directories..."\nLOG_DIR_BACKUP="/tmp/***_logs"\n\n# Try to create log directory with primary path\nif mkdir -p "/app/***/logs/pipeline" 2>/dev/null && touch "/app/***/logs/pipeline/.write_test" 2>/dev/null; then\n    echo "✓ Using primary log path: /app/***/logs/pipeline"\n    rm -f "/app/***/logs/pipeline/.write_test"\nelse\n    echo "⚠ Primary log path not writable, using backup: $LOG_DIR_BACKUP"\n    mkdir -p "$LOG_DIR_BACKUP"\n    mkdir -p "/app/data/output" 2>/dev/null || true\nfi\n\n# Create data output directory (non-critical)\nmkdir -p "/app/data/output" 2>/dev/null || echo "⚠ Warning: Could not create data output directory"\n\n# Clean up old output files to prevent Spark OVERWRITE permission issues\necho "Cleaning previous output..."\nif [ -d "/app/data/output" ]; then\n    # Ensure we can delete all files by fixing permissions first\n    chmod -R 777 "/app/data/output" 2>/dev/null || true\n    # Remove entire output tree and recreate\n    rm -rf "/app/data/output" 2>/dev/null && echo "  ✓ Cleaned /app/data/output" || echo "  ⚠ Partial cleanup of /app/data/output"\nfi\n# Recreate clean output directory structure\nmkdir -p "/app/data/output/events" 2>/dev/null || true\nmkdir -p "/app/data/output/discards" 2>/dev/null || true\nchmod -R 777 "/app/data/output" 2>/dev/null || true\n\n# Set effective log path for the script\nexport LOG_PATH_EFFECTIVE="/app/***/logs/pipeline"\nif [ ! -w "/app/***/logs/pipeline" ]; then\n    export LOG_PATH_EFFECTIVE="$LOG_DIR_BACKUP"\nfi\n\necho "Effective log path: $LOG_PATH_EFFECTIVE"\n\n# Change to application home directory\nif [ -d "/app" ]; then\n    cd "/app"\n    echo "✓ Changed to: /app"\nelse\n    echo "✗ Application directory not found: /app"\n    exit 1\nfi\n\n# Run the pipeline script\necho "Executing pipeline script..."\npython "/app/src/main.py" 2>&1 | tee -a "$LOG_PATH_EFFECTIVE/pipeline.log" || true\n\n# Capture exit code\nEXIT_CODE=${PIPESTATUS[0]}\n\n# Report results\necho ""\necho "Pipeline execution completed with exit code: $EXIT_CODE"\n\nif [ $EXIT_CODE -eq 0 ]; then\n    echo "✓ Pipeline executed successfully"\n    exit 0\nelse\n    echo "✗ Pipeline failed with errors (see logs above)"\n    exit $EXIT_CODE\nfi\n        ']
+[2026-03-23T01:26:53.900+0000] {subprocess.py:86} INFO - Output:
+[2026-03-23T01:26:53.902+0000] {subprocess.py:93} INFO - Starting Spark pipeline execution...
+[2026-03-23T01:26:53.902+0000] {subprocess.py:93} INFO - Configuration: /app/metadata/config.json
+[2026-03-23T01:26:53.902+0000] {subprocess.py:93} INFO - Data path: /app/data
+[2026-03-23T01:26:53.903+0000] {subprocess.py:93} INFO - Script: /app/src/main.py
+[2026-03-23T01:26:53.903+0000] {subprocess.py:93} INFO - Log path: /app/***/logs/pipeline
+[2026-03-23T01:26:53.903+0000] {subprocess.py:93} INFO - Preparing directories...
+[2026-03-23T01:26:53.908+0000] {subprocess.py:93} INFO - ✓ Using primary log path: /app/***/logs/pipeline
+[2026-03-23T01:26:53.913+0000] {subprocess.py:93} INFO - Cleaning previous output...
+[2026-03-23T01:26:53.918+0000] {subprocess.py:93} INFO -   ✓ Cleaned /app/data/output
+[2026-03-23T01:26:53.925+0000] {subprocess.py:93} INFO - Effective log path: /app/***/logs/pipeline
+[2026-03-23T01:26:53.926+0000] {subprocess.py:93} INFO - ✓ Changed to: /app
+[2026-03-23T01:26:53.926+0000] {subprocess.py:93} INFO - Executing pipeline script...
+[2026-03-23T01:26:54.181+0000] {subprocess.py:93} INFO - 2026-03-23 01:26:54,181 - __main__ - INFO - Starting Dynamic Spark Pipeline...
+[2026-03-23T01:26:54.181+0000] {subprocess.py:93} INFO - 2026-03-23 01:26:54,181 - __main__ - INFO - Loading config from metadata/config.json
+[2026-03-23T01:26:54.182+0000] {subprocess.py:93} INFO - 2026-03-23 01:26:54,181 - __main__ - INFO - Creating Spark session...
+[2026-03-23T01:26:54.414+0000] {subprocess.py:93} INFO - WARNING: Using incubator modules: jdk.incubator.vector
+[2026-03-23T01:26:55.835+0000] {subprocess.py:93} INFO - Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+[2026-03-23T01:26:55.836+0000] {subprocess.py:93} INFO - Setting default log level to "WARN".
+[2026-03-23T01:26:55.836+0000] {subprocess.py:93} INFO - To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+[2026-03-23T01:26:56.826+0000] {subprocess.py:93} INFO - 26/03/23 01:26:56 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+[2026-03-23T01:27:00.813+0000] {subprocess.py:93} INFO - 2026-03-23 01:27:00,813 - __main__ - INFO - Executing 1 dataflow(s)...
+[2026-03-23T01:27:04.451+0000] {subprocess.py:93} INFO - [Stage 0:>                                                          (0 + 1) / 1]                                                                                [raw-ok] ✓ Successfully wrote to data/output/events/motor_policy
+[2026-03-23T01:27:04.452+0000] {subprocess.py:93} INFO - [raw-ko] ✓ Successfully wrote to data/output/discards/motor_policy
+[2026-03-23T01:27:04.452+0000] {subprocess.py:93} INFO - 2026-03-23 01:27:04,451 - __main__ - INFO - Pipeline completed successfully
+[2026-03-23T01:27:04.452+0000] {subprocess.py:93} INFO - 2026-03-23 01:27:04,451 - __main__ - INFO - Stopping Spark session...
+[2026-03-23T01:27:05.168+0000] {subprocess.py:93} INFO - 
+[2026-03-23T01:27:05.169+0000] {subprocess.py:93} INFO - Pipeline execution completed with exit code: 0
+[2026-03-23T01:27:05.169+0000] {subprocess.py:93} INFO - ✓ Pipeline executed successfully
+[2026-03-23T01:27:05.169+0000] {subprocess.py:97} INFO - Command exited with return code 0
+[2026-03-23T01:27:05.237+0000] {taskinstance.py:1400} INFO - Marking task as SUCCESS. dag_id=dynamic_spark_pipeline, task_id=run_pipeline, execution_date=20260323T012611, start_date=20260323T012653, end_date=20260323T012705
+[2026-03-23T01:27:05.275+0000] {local_task_job_runner.py:228} INFO - Task exited with return code 0
+[2026-03-23T01:27:05.319+0000] {taskinstance.py:2778} INFO - 1 downstream tasks scheduled from follow-on schedule check

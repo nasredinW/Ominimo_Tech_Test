@@ -1,0 +1,102 @@
+{
+  "dataflows": [
+    {
+      "name": "clients-processing",
+      "description": "Process client data with filtering and derived columns",
+      "sources": [
+        {
+          "name": "clients_raw",
+          "format": "CSV",
+          "path": "data/input/clients.csv",
+          "options": {
+            "delimiter": ";",
+            "header": "true",
+            "inferSchema": "true"
+          }
+        }
+      ],
+      "transformations": [
+        {
+          "name": "filter_adults",
+          "type": "filter_rows",
+          "params": {
+            "input": "clients_raw",
+            "condition": "age >= 18"
+          }
+        },
+        {
+          "name": "add_age_category",
+          "type": "derive_column",
+          "params": {
+            "input": "filter_adults",
+            "column": "age_category",
+            "expression": "CASE WHEN age > 60 THEN 'senior' WHEN age >= 18 THEN 'adult' ELSE 'minor' END"
+          }
+        },
+        {
+          "name": "add_processing_date",
+          "type": "add_fields",
+          "params": {
+            "input": "add_age_category",
+            "addFields": [
+              {
+                "name": "processing_date",
+                "function": "current_timestamp"
+              }
+            ]
+          }
+        },
+        {
+          "name": "data_quality",
+          "type": "validate_fields",
+          "params": {
+            "input": "add_processing_date",
+            "validations": [
+              {
+                "field": "id",
+                "validations": ["notNull"]
+              },
+              {
+                "field": "nom",
+                "validations": ["notEmpty"]
+              },
+              {
+                "field": "age",
+                "validations": ["notNull"]
+              }
+            ]
+          }
+        }
+      ],
+      "sinks": [
+        {
+          "name": "clients_clean",
+          "input": "validation_ok",
+          "format": "JSON",
+          "saveMode": "OVERWRITE",
+          "paths": [
+            "data/output/clients/processed"
+          ]
+        },
+        {
+          "name": "clients_rejected",
+          "input": "validation_ko",
+          "format": "JSON",
+          "saveMode": "OVERWRITE",
+          "paths": [
+            "data/output/clients/rejected"
+          ]
+        },
+        {
+          "name": "clients_parquet",
+          "input": "validation_ok",
+          "format": "PARQUET",
+          "saveMode": "OVERWRITE",
+          "paths": [
+            "data/output/clients/parquet"
+          ]
+        }
+      ]
+    }
+  ]
+}
