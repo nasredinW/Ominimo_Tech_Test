@@ -1,0 +1,234 @@
+{
+  "dataflows": [
+    {
+      "name": "professional-validation-example",
+      "sources": [
+        {
+          "name": "customer_data",
+          "format": "JSON",
+          "path": "data/input/customers.json"
+        }
+      ],
+      "transformations": [
+        {
+          "name": "professional_validation",
+          "type": "validate_fields",
+          "params": {
+            "input": "customer_data",
+            "validations": [
+              {
+                "field": "customer_id",
+                "validations": [
+                  {
+                    "type": "notNull",
+                    "message": "Customer ID is required"
+                  },
+                  {
+                    "type": "uuid",
+                    "message": "Customer ID must be valid UUID format"
+                  }
+                ]
+              },
+              {
+                "field": "email",
+                "validations": [
+                  {
+                    "type": "notEmpty",
+                    "message": "Email cannot be empty"
+                  },
+                  {
+                    "type": "email",
+                    "message": "Invalid email format"
+                  }
+                ]
+              },
+              {
+                "field": "phone",
+                "validations": [
+                  {
+                    "type": "phone",
+                    "message": "Invalid phone number format"
+                  }
+                ]
+              },
+              {
+                "field": "age",
+                "validations": [
+                  {
+                    "type": "notNull",
+                    "message": "Age is required"
+                  },
+                  {
+                    "type": "integer",
+                    "message": "Age must be an integer"
+                  },
+                  {
+                    "type": "between",
+                    "min": 0,
+                    "max": 150,
+                    "message": "Age must be between 0 and 150"
+                  }
+                ]
+              },
+              {
+                "field": "registration_date",
+                "validations": [
+                  {
+                    "type": "notNull",
+                    "message": "Registration date is required"
+                  },
+                  {
+                    "type": "dateFormat",
+                    "message": "Date must be in YYYY-MM-DD format"
+                  }
+                ]
+              },
+              {
+                "field": "first_name",
+                "validations": [
+                  {
+                    "type": "notEmpty",
+                    "message": "First name is required"
+                  },
+                  {
+                    "type": "minLength",
+                    "value": 2,
+                    "message": "First name must be at least 2 characters"
+                  },
+                  {
+                    "type": "maxLength",
+                    "value": 50,
+                    "message": "First name cannot exceed 50 characters"
+                  }
+                ]
+              },
+              {
+                "field": "last_name",
+                "validations": [
+                  {
+                    "type": "notEmpty",
+                    "message": "Last name is required"
+                  },
+                  {
+                    "type": "lengthBetween",
+                    "min_len": 2,
+                    "max_len": 50,
+                    "message": "Last name must be 2-50 characters"
+                  }
+                ]
+              },
+              {
+                "field": "account_status",
+                "validations": [
+                  {
+                    "type": "notNull",
+                    "message": "Account status is required"
+                  },
+                  {
+                    "type": "inList",
+                    "values": ["ACTIVE", "PENDING", "INACTIVE", "SUSPENDED"],
+                    "message": "Account status must be ACTIVE, PENDING, INACTIVE, or SUSPENDED"
+                  }
+                ]
+              },
+              {
+                "field": "website",
+                "validations": [
+                  {
+                    "type": "url",
+                    "message": "Invalid website URL format"
+                  }
+                ]
+              },
+              {
+                "field": "postal_code",
+                "validations": [
+                  {
+                    "type": "pattern",
+                    "regex": "^[0-9]{5}(-[0-9]{4})?$",
+                    "message": "Postal code must be valid format (12345 or 12345-6789)"
+                  }
+                ]
+              },
+              {
+                "field": "company",
+                "validations": [
+                  {
+                    "type": "startsWith",
+                    "prefix": "com",
+                    "message": "Company must start with 'com'"
+                  }
+                ]
+              },
+              {
+                "field": "reference_code",
+                "validations": [
+                  {
+                    "type": "endsWith",
+                    "suffix": "_REF",
+                    "message": "Reference code must end with '_REF'"
+                  }
+                ]
+              },
+              {
+                "field": "notes",
+                "validations": [
+                  {
+                    "type": "contains",
+                    "substring": "customer",
+                    "message": "Notes must contain the word 'customer'"
+                  }
+                ]
+              },
+              {
+                "field": "credit_score",
+                "validations": [
+                  {
+                    "type": "numeric",
+                    "message": "Credit score must be numeric"
+                  },
+                  {
+                    "type": "greaterThan",
+                    "value": 300,
+                    "message": "Credit score must be greater than 300"
+                  },
+                  {
+                    "type": "lessThan",
+                    "value": 900,
+                    "message": "Credit score must be less than 900"
+                  }
+                ]
+              },
+              {
+                "field": "custom_compliance_check",
+                "validations": [
+                  {
+                    "type": "custom_sql",
+                    "expression": "{column} IS NOT NULL AND (age >= 18 OR status = 'AUTHORIZED')",
+                    "message": "Must pass custom compliance check"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "sinks": [
+        {
+          "name": "valid_customers",
+          "input": "validation_ok",
+          "format": "JSON",
+          "paths": ["data/output/customers/valid"],
+          "saveMode": "OVERWRITE"
+        },
+        {
+          "name": "invalid_customers",
+          "input": "validation_ko",
+          "format": "JSON",
+          "paths": ["data/output/customers/invalid"],
+          "saveMode": "OVERWRITE"
+        }
+      ]
+    }
+  ]
+}

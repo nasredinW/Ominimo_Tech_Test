@@ -1,5 +1,11 @@
 from reader import read_source
-from transformers_registry import get_transformation_handler, list_available_transformations
+from transformers_registry_v2 import (
+    get_transformation_handler,
+    list_available_transformations,
+    create_transformation,
+    ValidationError,
+    ExecutionError
+)
 from writer import write_output
 
 
@@ -35,18 +41,14 @@ class PipelineEngine:
                     f"Transformation '{step_name}' references missing input dataframe '{input_name}'"
                 )
 
-            # Get the handler class from the registry
-            handler_class = get_transformation_handler(step_type)
-            if not handler_class:
-                available = list_available_transformations()
-                raise ValueError(
-                    f"Unsupported transformation type '{step_type}' in step '{step_name}'. "
-                    f"Available types: {', '.join(available)}"
-                )
-
-            # Execute the transformation using the handler
+            # Create and execute the transformation using the v2 registry
             try:
-                handler = handler_class(self.spark, self.dataframes[input_name], params)
+                handler = create_transformation(
+                    step_type,
+                    self.spark,
+                    self.dataframes[input_name],
+                    params
+                )
                 result = handler.execute()
                 
                 # Special handling for validate_fields which returns two dataframes
@@ -59,6 +61,15 @@ class PipelineEngine:
                     if not step_name:
                         raise ValueError(f"Transformation of type '{step_type}' must define a non-empty 'name'")
                     self.dataframes[step_name] = result
+            except (ValidationError, ExecutionError) as exc:
+                raise RuntimeError(f"Transformation '{step_name}' (type '{step_type}') failed: {exc}") from exc
+            except ValueError as exc:
+                # Raised when transformation type is unknown
+                available = list_available_transformations()
+                raise ValueError(
+                    f"Unsupported transformation type '{step_type}' in step '{step_name}'. "
+                    f"Available types: {', '.join(available)}"
+                ) from exc
             except Exception as exc:
                 raise RuntimeError(f"Transformation '{step_name}' (type '{step_type}') failed: {exc}") from exc
 

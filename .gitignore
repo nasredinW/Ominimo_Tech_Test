@@ -21,5 +21,22 @@ env/
 .DS_Store
 .vscode/
 
+# Logs
+*.log
+logs/
+airflow_home/logs/
+airflow_home/airflow-webserver.pid
+
+# Airflow
+.airflow/
+airflow_logs/
+
 # Generated pipeline outputs
 data/output/
+
+# Database
+postgres_data/
+
+# Temporary files
+.tmp/
+*.tmp

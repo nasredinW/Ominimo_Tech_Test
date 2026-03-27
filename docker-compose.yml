@@ -13,10 +13,13 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U airflow"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD-SHELL", "pg_isready -U airflow -h localhost"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
+    networks:
+      - airflow-network
 
   airflow-webserver:
     build:
@@ -48,8 +51,19 @@ services:
       - "8080:8080"
     command: >
       bash -c "
+      echo 'Waiting for postgres to be ready...' &&
+      for i in {1..30}; do
+        if pg_isready -h postgres -U airflow; then
+          echo 'Postgres is ready!' && break;
+        fi;
+        echo 'Attempt '$$i': Postgres not ready, waiting...' &&
+        sleep 2;
+      done &&
+      echo 'Running database migrations...' &&
       airflow db migrate &&
+      echo 'Creating admin user...' &&
       airflow users create --username admin --password admin --firstname Admin --lastname Admin --role Admin --email admin@example.com 2>/dev/null || true &&
+      echo 'Starting webserver...' &&
       airflow webserver --port 8080
       "
     healthcheck:
@@ -57,11 +71,14 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 60s
+    networks:
+      - airflow-network
 
   airflow-scheduler:
     build:
       context: .
-      dockerfile: Dockerfile.airflow
+      dockerfile: Dockerfile
     container_name: airflow-scheduler
     depends_on:
       postgres:
@@ -84,6 +101,15 @@ services:
       - ./airflow_home:/app/airflow
     command: >
       bash -c "
+      echo 'Waiting for postgres to be ready...' &&
+      for i in {1..30}; do
+        if pg_isready -h postgres -U airflow; then
+          echo 'Postgres is ready!' && break;
+        fi;
+        echo 'Attempt '$$i': Postgres not ready, waiting...' &&
+        sleep 2;
+      done &&
+      echo 'Starting scheduler...' &&
       airflow scheduler
       "
     healthcheck:
@@ -91,6 +117,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 60s
+    networks:
+      - airflow-network
 
   spark-master:
     image: python:3.9
@@ -114,12 +143,12 @@ services:
       echo 'Spark environment ready - triggered by Airflow DAG'
       "
     networks:
-      - default
+      - airflow-network
 
 volumes:
   postgres_data:
   spark_logs:
 
 networks:
-  default:
+  airflow-network:
     driver: bridge
