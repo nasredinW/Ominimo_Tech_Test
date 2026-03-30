@@ -6,7 +6,10 @@
         {
           "name": "customer_data",
           "format": "JSON",
-          "path": "data/input/customers.json"
+          "path": "data/input/customers.json",
+          "options": {
+            "multiline": "false"
+          }
         }
       ],
       "transformations": [
@@ -132,51 +135,12 @@
                 ]
               },
               {
-                "field": "website",
-                "validations": [
-                  {
-                    "type": "url",
-                    "message": "Invalid website URL format"
-                  }
-                ]
-              },
-              {
                 "field": "postal_code",
                 "validations": [
                   {
                     "type": "pattern",
                     "regex": "^[0-9]{5}(-[0-9]{4})?$",
                     "message": "Postal code must be valid format (12345 or 12345-6789)"
-                  }
-                ]
-              },
-              {
-                "field": "company",
-                "validations": [
-                  {
-                    "type": "startsWith",
-                    "prefix": "com",
-                    "message": "Company must start with 'com'"
-                  }
-                ]
-              },
-              {
-                "field": "reference_code",
-                "validations": [
-                  {
-                    "type": "endsWith",
-                    "suffix": "_REF",
-                    "message": "Reference code must end with '_REF'"
-                  }
-                ]
-              },
-              {
-                "field": "notes",
-                "validations": [
-                  {
-                    "type": "contains",
-                    "substring": "customer",
-                    "message": "Notes must contain the word 'customer'"
                   }
                 ]
               },
@@ -196,16 +160,6 @@
                     "type": "lessThan",
                     "value": 900,
                     "message": "Credit score must be less than 900"
-                  }
-                ]
-              },
-              {
-                "field": "custom_compliance_check",
-                "validations": [
-                  {
-                    "type": "custom_sql",
-                    "expression": "{column} IS NOT NULL AND (age >= 18 OR status = 'AUTHORIZED')",
-                    "message": "Must pass custom compliance check"
                   }
                 ]
               }

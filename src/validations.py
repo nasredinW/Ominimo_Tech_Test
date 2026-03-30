@@ -50,7 +50,7 @@ from typing import Dict, List, Any, Callable, Optional, Tuple
 
 
 # ==============================================================================
-# PROFESSIONAL VALIDATION ERROR CLASS
+#  VALIDATION ERROR CLASS
 # ==============================================================================
 
 class ValidationException(Exception):
@@ -171,9 +171,9 @@ class ValidationBuilders:
     @staticmethod
     def between(column: str, min: Any = None, max: Any = None, min_val: Any = None, max_val: Any = None) -> Any:
         """Value between min and max (inclusive)"""
-        min_value = min or min_val
-        max_value = max or max_val
-        if not min_value or not max_value:
+        min_value = min if min is not None else min_val
+        max_value = max if max is not None else max_val
+        if min_value is None or max_value is None:
             raise ValueError("between requires 'min' and 'max' parameters")
         return (col(column).cast("double") >= min_value) & (col(column).cast("double") <= max_value)
     
@@ -230,7 +230,7 @@ class ValidationBuilders:
 
 
 # ==============================================================================
-# PROFESSIONAL VALIDATOR REGISTRY
+#  VALIDATOR REGISTRY
 # ==============================================================================
 
 class ValidatorRegistry:

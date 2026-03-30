@@ -1,0 +1,22 @@
+{
+  "s3_bucket": "s3ominimotest",
+  "s3_config_prefix": "data/metadata/",
+  "s3_input_prefix": "data/input/",
+  "s3_output_prefix": "data/output/",
+  "aws_conn_id": "aws_default",
+  "aws_region": "us-east-1",
+  "spark_app_name": "DynamicSparkPipeline",
+  "pipeline_owner": "data-engineering",
+  "pipeline_email": "admin@example.com",
+  "default_config": "config_clients.json",
+  "s3_test_config": "config_s3_test.json",
+  "enable_s3_sync": "true",
+  "local_data_path": "/app/data",
+  "local_metadata_path": "/app/metadata",
+  "spark_master": "local[*]",
+  "spark_memory": "2g",
+  "spark_driver_memory": "1g",
+  "spark_executor_memory": "1g",
+  "test_mode": "true",
+  "log_level": "INFO"
+}

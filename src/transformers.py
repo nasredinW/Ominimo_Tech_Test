@@ -1,13 +1,12 @@
 """
-Advanced Transformation Handler Registry with Modern Python Patterns
-
-Features:
-- Type hints for better IDE support and error detection
-- Pydantic for robust parameter validation
-- Decorators for cross-cutting concerns (validation, error handling)
-- Automatic handler registration via __init_subclass__
-- Custom exception hierarchy
-- Functional and OOP patterns combined
+                                             Transformations Registry
+                    Features:
+                    - Type hints for better IDE support and error detection
+                    - Pydantic for robust parameter validation
+                    - Decorators for cross-cutting concerns (validation, error handling)
+                    - Automatic handler registration via __init_subclass__
+                    - Custom exception hierarchy
+                    - Functional and OOP patterns combined
 """
 
 from abc import ABC, abstractmethod
@@ -345,11 +344,7 @@ def create_transformation(
     return handler_class(spark, df, params)
 
 
-# ==============================================================================
-# BACKWARDS COMPATIBILITY
-# ==============================================================================
 
-# For compatibility with old code that referenced the direct registry
 TRANSFORMATION_REGISTRY = {
     key: TransformationHandler.get_handler(key)
     for key in TransformationHandler.list_all()

@@ -13,13 +13,23 @@ def read_source(spark, source_config):
         raise ValueError(f"Source '{source_name}' is missing required field 'format'")
 
     try:
+
+        # Detect storage type
+        storage_type = "S3" if source_path.startswith("s3a://") else "Local"
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Reading {storage_type} source '{source_name}' from: {source_path}")
+        
         reader = spark.read.format(source_format)
         
         # Apply options if provided
         if source_options:
             reader = reader.options(**source_options)
         
-        return reader.load(source_path)
+        df = reader.load(source_path)
+        logger.info(f"✓ Successfully read {storage_type} source '{source_name}' ({df.count()} records)")
+        
+        return df
     except Exception as exc:
         raise RuntimeError(
             f"Failed reading source '{source_name}' with format '{source_format}' from '{source_path}'"

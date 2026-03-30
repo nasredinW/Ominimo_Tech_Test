@@ -1,349 +1,245 @@
-# Dynamic Spark Pipeline
 
-**100% Metadata-Driven | Zero Code Changes for New Features | Handler Registry Pattern**
+# Dynamic Spark Pipeline (Config-Driven) + Airflow DAG
 
-Config-driven PySpark pipeline that reads source data, applies validations and transformations, then writes outputs to one or more sinks. Fully extensible without modifying the engine.
+This repository implements a **config-driven PySpark ETL pipeline** that can be run:
 
-## ⭐ Key Features
+- Locally from the CLI (Python + venv)
+- Inside an Airflow DAG (see [dags/dynamic_spark_pipeline_dag.py](dags/dynamic_spark_pipeline_dag.py))
 
-✓ **Truly Dynamic** - All logic defined in JSON configs  
-✓ **No Code Changes** - Add new transformation types without modifying `engine.py`  
-✓ **Handler Registry** - Extensible transformation framework  
-✓ **Type-Safe** - Metadata-driven validation at runtime  
-✓ **Production-Ready** - Docker, Airflow, and Spark integrated  
+The pipeline is defined entirely by JSON configs in [metadata/](metadata/): **sources → transformations → sinks**.
 
-## Project Structure
+## Project structure
 
-```text
-.
-├── .dockerignore
-├── .env
-├── .gitignore
-├── Dockerfile
-├── docker-compose.yml
-├── ARCHITECTURE_SOLUTION.md          ← Start here for architecture overview
-├── DYNAMIC_ARCHITECTURE.md           ← Handler registry guide & examples
-├── dags/
-│   └── dynamic_spark_pipeline_dag.py
-├── data/
-│   ├── input.json
-│   └── output/
-├── metadata/
-│   ├── config.json                   (motor policy validation)
-│   └── config_clients.json           (advanced features example)
-├── src/
-│   ├── engine.py                     (refactored: dynamic dispatch)
-│   ├── logger.py
-│   ├── main.py
-│   ├── reader.py
-│   ├── transformer.py                (deprecated: legacy support)
-│   ├── transformers_registry.py      (NEW: handler registry)
-│   ├── validations.py
-│   ├── validator.py
-│   └── writer.py
-└── verify_dynamic_architecture.py    (test & demo script)
-```
+- [src/main.py](src/main.py): CLI entrypoint; loads config (local or `s3://...`) and runs the engine
+- [src/engine.py](src/engine.py): Orchestrates sources → transformations → sinks
+- [src/reader.py](src/reader.py): Reads sources (`spark.read.format(...).load(path)`)
+- [src/transformers.py](src/transformers.py): Transformation registry + handlers (config-driven)
+- [src/validations.py](src/validations.py) + [src/validator.py](src/validator.py): Data quality validation framework
+- [src/writer.py](src/writer.py): Writes sinks with optional output versioning
+- [metadata/](metadata/): Example configs (recommended starting point)
+- [dags/](dags/): Airflow DAG to orchestrate the pipeline and optionally sync outputs to S3
 
-## How It Works
+## Run locally (venv)
 
-**Dynamic Handler Registry Pattern:**
+### Prerequisites
 
-1. `src/main.py` creates a Spark session and loads config
-2. `src/engine.py` reads the dataflow definition:
-   - Reads all `sources`
-   - For each `transformation`:
-     - Looks up handler from `transformers_registry` 
-     - Instantiates handler with dataframe and params
-     - Executes handler and stores result
-   - Writes all `sinks`
-3. Handlers are completely decoupled from engine - add new types anytime!
+- Linux/macOS
+- Python 3.9+ (this repo’s Docker image uses Python 3.9)
+- Java 17 (required by PySpark)
 
-**Example dataflow:**
-
-```json
-{
-  "transformations": [
-    {
-      "name": "filter_active",
-      "type": "filter_rows",
-      "params": {
-        "input": "raw_data",
-        "condition": "status = 'active'"
-      }
-    },
-    {
-      "name": "with_age_group",
-      "type": "derive_column",
-      "params": {
-        "input": "filter_active",
-        "column": "age_group",
-        "expression": "CASE WHEN age < 18 THEN 'minor' ELSE 'adult' END"
-      }
-    }
-  ]
-}
-```
-
-No code changes needed! Just define the config.
-
-## Configuration Contract
-
-The pipeline expects a JSON config with this top-level structure:
-
-```json
-{
-	"dataflows": [
-		{
-			"name": "string",
-			"sources": [
-				{
-					"name": "string",
-					"format": "JSON|PARQUET|CSV|...",
-					"path": "input path",
-					"options": {
-						"delimiter": ";",
-						"header": "true",
-						"inferSchema": "true"
-					}
-				}
-			],
-			"transformations": [
-				{
-					"name": "validation",
-					"type": "validate_fields",
-					"params": {
-						"input": "source_name",
-						"validations": [
-							{
-								"field": "column_name",
-								"rules": [{"name": "notEmpty"}, {"name": "notNull"}]
-							}
-						]
-					}
-				}
-			],
-			"sinks": [
-				{
-					"name": "raw-ok",
-					"input": "validation_ok",
-					"format": "JSON",
-					"saveMode": "OVERWRITE",
-					"paths": ["output path"]
-				}
-			]
-		}
-	]
-}
-```
-
-## Available Transformation Types
-
-All transformation types are defined in `src/transformers_registry.py`. Add new types WITHOUT code changes!
-
-| Type | Description | Example |
-|------|-------------|---------|
-| `validate_fields` | Split into validation_ok/validation_ko | See config.json |
-| `add_fields` | Add computed columns | Add current_timestamp |
-| `filter_rows` | SQL WHERE conditions | `"age >= 18 AND status='active'"` |
-| `derive_column` | SQL expressions (CASE WHEN) | `"CASE WHEN age<18 THEN 'minor' ELSE 'adult' END"` |
-| `select_columns` | Project specific columns | `["name", "email", "age"]` |
-| `rename_columns` | Rename columns | Map old→new names |
-| `drop_columns` | Remove columns | List column names to drop |
-
-**See [DYNAMIC_ARCHITECTURE.md](DYNAMIC_ARCHITECTURE.md) for detailed examples and guide to adding new types.**
-
-## Architecture Overview
-
-**See [ARCHITECTURE_SOLUTION.md](ARCHITECTURE_SOLUTION.md) for complete architecture documentation.**
-
-### Handler Registry Pattern
-
-- **Extensible**: Add new transformation types via handler registration
-- **Metadata-Driven**: All logic in JSON configs
-- **Zero Engine Changes**: Engine never modified for new transformation types
-- **Clean Separation**: Each handler handles one transformation type
-
-### Quick Example: Adding New Transformation Type
-
-**1. Create handler in `src/transformers_registry.py`:**
-```python
-class MyNewHandler(TransformationHandler):
-    def execute(self):
-        my_param = self.params.get("my_param")
-        # transform dataframe...
-        return result_df
-```
-
-**2. Register in the registry:**
-```python
-TRANSFORMATION_REGISTRY["my_type"] = MyNewHandler
-```
-
-**3. Use in config:**
-```json
-{"type": "my_type", "params": {"input": "source", "my_param": "value"}}
-```
-
-**Done! Zero changes to `engine.py`.**
-
-## Run Locally
-
-Prerequisites:
-
-- Python 3.9+
-- Java runtime compatible with your PySpark version
-
-Install dependencies:
+### Create venv + install dependencies
 
 ```bash
-pip install pyspark
+python -m venv .venv
+source .venv/bin/activate
+
+python -m pip install --upgrade pip
+pip install pyspark boto3 botocore
 ```
 
-Verify dynamic architecture:
+### Run an example config
 
 ```bash
-python3 verify_dynamic_architecture.py
+python src/main.py --config metadata/config_clients.json --app-name "MyPipeline"
 ```
 
-This will test all 7 transformation handlers and demonstrate the registry pattern works.
-
-Run the pipeline:
+Other examples:
 
 ```bash
-python3 src/main.py
+python src/main.py --config metadata/config_customer.json --app-name "CustomerDQ"
+python src/main.py --config metadata/config_s3_test.json --app-name "S3Test"
 ```
 
-## Run with Docker
+### Notes
 
-The Docker image already includes Java and PySpark, so it runs out of the box.
+- Config placeholders `${VAR_NAME}` are supported and resolved from environment variables (see `ConfigResolver` in [src/main.py](src/main.py)).
+- Output versioning is enabled by default (see [src/writer.py](src/writer.py)).
+  - Disable with: `export OUTPUT_VERSIONING=false`
+  - When enabled, outputs are written under `_versions/<run_id>/` and a `_latest` pointer (or `LATEST` marker) is updated.
 
-Build image:
+## Config file structure (professional reference)
 
-```bash
-docker build -t dynamic-pipeline .
+Config examples live in:
+
+- [metadata/config_clients.json](metadata/config_clients.json)
+- [metadata/config_customer.json](metadata/config_customer.json)
+- [metadata/config_s3_test.json](metadata/config_s3_test.json)
+
+### Top-level schema
+
+| Key | Type | Required | Description |
+|---|---:|:---:|---|
+| `dataflows` | `array[dataflow]` | ✅ | List of one or more dataflows. Current engine runs the **first** dataflow (`dataflows[0]`). |
+| `metadata` | `object` | ❌ | Optional documentation block (version, notes, environment, etc.). Ignored by the engine. |
+
+### `dataflow` schema
+
+| Key | Type | Required | Description |
+|---|---:|:---:|---|
+| `name` | `string` | ❌ | Friendly name for the dataflow. |
+| `description` | `string` | ❌ | Human-readable description. |
+| `sources` | `array[source]` | ✅ | Input datasets to load into Spark. Each source is registered by `name`. |
+| `transformations` | `array[transformation]` | ❌ | Ordered transformation steps. Each step produces a named dataframe. |
+| `sinks` | `array[sink]` | ✅ | Where to write results (JSON, Parquet, ...). |
+
+### `source` schema
+
+| Key | Type | Required | Description |
+|---|---:|:---:|---|
+| `name` | `string` | ✅ | Source dataframe name (used as `params.input` for transformations). |
+| `format` | `string` | ✅ | Spark format (e.g., `JSON`, `CSV`, `PARQUET`). |
+| `path` | `string` | ✅ | Local path or `s3a://...` path. |
+| `options` | `object` | ❌ | Passed to Spark reader via `.options(**options)`. |
+| `description` | `string` | ❌ | Documentation only. |
+
+### `sink` schema
+
+| Key | Type | Required | Description |
+|---|---:|:---:|---|
+| `name` | `string` | ❌ | Sink name for logs/debugging. |
+| `input` | `string` | ✅ | Name of dataframe to write (must exist). |
+| `format` | `string` | ✅ | Spark format (e.g., `JSON`, `PARQUET`). |
+| `saveMode` | `string` | ✅ | Spark save mode (e.g., `OVERWRITE`, `APPEND`). |
+| `paths` | `array[string]` | ✅ | One or more output paths. |
+| `options` | `object` | ❌ | Passed to Spark writer via `.options(**options)`. |
+| `partitionBy` | `array[string]` | ❌ | Partition columns for output. |
+| `versioning` | `bool \| object` | ❌ | Enable/disable output versioning per sink (default: enabled). |
+| `description` | `string` | ❌ | Documentation only. |
+
+## Transformations (what you can use in config)
+
+Transformations are implemented as handlers in [src/transformers.py](src/transformers.py). The engine executes them in order.
+
+### Common transformation fields
+
+| Key | Type | Required | Description |
+|---|---:|:---:|---|
+| `name` | `string` | ✅ (except `validate_fields` output handling) | Name of the produced dataframe (used by later steps and sinks). |
+| `type` | `string` | ✅ | Transformation type. |
+| `params` | `object` | ✅ | Transformation parameters (must include `input`). |
+| `params.input` | `string` | ✅ | Name of the input dataframe. |
+
+### Supported transformation types
+
+| `type` | Extra params (besides `input`) | Output |
+|---|---|---|
+| `validate_fields` | `validations: array[validation_rule]` | Produces two dataframes: `validation_ok` and `validation_ko` |
+| `add_fields` | `addFields: array[{name,function}]` | Dataframe with new columns |
+| `filter_rows` | `condition: string` | Filtered dataframe |
+| `derive_column` | `column: string`, `expression: string` | Dataframe with derived column |
+| `select_columns` | `columns: array[string]` | Dataframe with only selected columns |
+| `rename_columns` | `mappings: object` | Dataframe with renamed columns |
+| `drop_columns` | `columns: array[string]` | Dataframe with dropped columns |
+
+### `add_fields` function support
+
+Currently implemented:
+
+- `current_timestamp`
+
+## Validations (data quality)
+
+Validations are configured under `validate_fields` and implemented in:
+
+- [src/validations.py](src/validations.py): registry of validators + condition builders
+- [src/validator.py](src/validator.py): `DataQualityValidator` that splits valid vs invalid records
+
+### Validation rule schema
+
+| Key | Type | Required | Description |
+|---|---:|:---:|---|
+| `field` | `string` | ✅ | Column name to validate. Must exist in the dataframe. |
+| `validations` | `array[string \| object]` | ✅ | List of validators. Each entry can be a simple string or a dict with parameters. |
+| `message` | `string` | ❌ | Default message for the field (overridden by validator-level `message`). |
+
+Validator entry forms:
+
+- Simple: `"notNull"`
+- Parameterized: `{ "type": "between", "min": 0, "max": 150, "message": "Age must be 0-150" }`
+
+### Available validator types
+
+Simple (no parameters):
+
+- `notNull`, `notEmpty`, `numeric`, `integer`, `positive`, `nonNegative`, `email`, `phone`, `dateFormat`, `datetimeFormat`, `uuid`, `url`
+
+Parameterized:
+
+- `minLength`, `maxLength`, `lengthBetween`, `between`, `greaterThan`, `lessThan`, `equals`, `pattern`, `inList`, `startsWith`, `endsWith`, `contains`
+
+Advanced:
+
+- `custom_sql` with `{ "type": "custom_sql", "expression": "{column} IS NOT NULL AND {column} <> ''" }`
+
+## Airflow DAG flow (diagram + explanation)
+
+The Airflow DAG is defined in [dags/dynamic_spark_pipeline_dag.py](dags/dynamic_spark_pipeline_dag.py).
+
+### DAG task flow
+
+```mermaid
+flowchart LR
+  T1[extract_config_from_s3] --> T2[download_sources_from_s3]
+  T2 --> T3[validate_source_data]
+  T3 --> T4[apply_transformations]\n(calls Spark pipeline)
+  T4 --> T5[upload_outputs_to_s3]
+  T5 --> T6[pipeline_execution_summary]
 ```
 
-Run container:
+### What each task does
 
-```bash
-docker run --rm -v "$(pwd)/data:/app/data" dynamic-pipeline
-```
+1. **extract_config_from_s3**
+	- Picks a config file (default is controlled by Airflow Variables).
+	- For local/dev, it reads configs from `metadata/`.
+	- Resolves source paths to absolute paths (keeps sink paths relative for S3 key construction).
+2. **download_sources_from_s3**
+	- Currently verifies local source files exist (acts as a placeholder for real S3 downloads).
+3. **validate_source_data**
+	- Performs basic file existence/size checks and stores results in XCom.
+4. **apply_transformations**
+	- Prepares a Spark-friendly config (converts sink paths to absolute local paths).
+	- Calls the pipeline CLI entrypoint from [src/main.py](src/main.py), which runs:
+	  - [src/reader.py](src/reader.py) to load sources
+	  - [src/engine.py](src/engine.py) to apply transformation handlers
+	  - [src/writer.py](src/writer.py) to write outputs
+5. **upload_outputs_to_s3**
+	- If `enable_s3_sync=true`, uploads output files to S3 using Airflow AWS connection or env credentials.
+	- If disabled, it only verifies outputs exist locally.
+6. **pipeline_execution_summary**
+	- Logs a human-readable summary of the run.
 
-## Orchestration with Airflow & Docker Compose
+## Implementation review (transformers + validations + overall)
 
-Run the full stack (PostgreSQL, Airflow, Spark):
+This is a code review summary based on the current implementation.
 
-```bash
-docker-compose up
-```
+### Transformers ([src/transformers.py](src/transformers.py))
 
-Access Airflow UI: http://localhost:8080  
-DAG: `dynamic_spark_pipeline_dag`
+What’s good:
 
-See the DAG automatically execute the pipeline when config changes.
+- **Registry pattern** via `__init_subclass__`: adding a new handler is simple and discoverable.
+- **Consistent error wrapping** via `handle_execution_errors`.
+- **Config-first design**: transformations map cleanly to JSON.
 
+Risks / improvements (if you want to harden it):
 
-🔧 **Implementation Details**:
-- [src/transformers_registry.py](src/transformers_registry.py) - All transformation handlers
-- [src/engine.py](src/engine.py) - Dynamic dispatch engine
-- [metadata/config.json](metadata/config.json) - Motor policy example config
-- [metadata/config_clients.json](metadata/config_clients.json) - Advanced features example
+- `ValidateFieldsHandler.execute()` returns a tuple `(ok_df, ko_df)` but is annotated as `DataFrame`.
+- Logging uses `print(...)` inside `log_transformation`; using the project logger would integrate better with Airflow logs.
+- `require_params(...)` treats empty lists/dicts as “missing” (usually OK, but worth being aware of for optional params).
 
-✅ **Verification**:
-- [verify_dynamic_architecture.py](verify_dynamic_architecture.py) - Live tests of handler registry
+### Validations ([src/validations.py](src/validations.py), [src/validator.py](src/validator.py))
 
-## Airflow Orchestration + Docker Compose
+What’s good:
 
-A complete orchestration setup with Airflow scheduler, webserver, PostgreSQL backend, and integrated Spark runtime.
+- Strong separation: **condition building** (registry) vs **application/splitting** (validator).
+- Supports both **string validators** and **dict validators with params**.
+- Produces an `invalid_df` with a `validation_errors` column for debugging and observability.
 
-### Features
+Risks / improvements:
 
-- **Airflow DAG** (`dags/dynamic_spark_pipeline_dag.py`):
-  - Daily scheduling at 2 AM (configurable via `schedule_interval`)
-  - Pre-flight config validation
-  - Pipeline execution with streaming logs
-  - Output validation (checks `_SUCCESS` markers)
-  - Automated statistics logging
-  - Retry logic (2 retries on failure)
+- `DataQualityValidator.get_validation_stats()` calls `.count()` multiple times (expensive on large data). If needed, compute counts once.
+- Validation error concatenation is good for debugging, but can be long for wide rule sets; consider truncation or a structured array if required later.
 
-- **Docker Compose Stack**:
-  - PostgreSQL 15 for Airflow metadata
-  - Airflow Webserver on `http://localhost:8080`
-  - Airflow Scheduler with continuous task monitoring
-  - Spark-ready Python runtime
+### Overall pipeline
 
-- **Logging & Monitoring**:
-  - Rotating file logs (10 MB max per file, 5 backups)
-  - Console + file output to `/var/log/airflow/pipeline.log`
-  - Task-level logging in Airflow UI
-  - Pipeline execution statistics
+- The pipeline is clear and extensible, but note that `.count()` is used in multiple places (sources and after transformations). That’s fine for small datasets, but it will slow down large runs.
 
-### Quick Start
-
-1. **Start the stack**:
-   ```bash
-   docker-compose up -d
-   ```
-   First run initializes the database (~30 seconds).
-
-2. **Verify services**:
-   ```bash
-   docker-compose ps
-   ```
-   All services should show "healthy" within 2–3 minutes.
-
-3. **Access Airflow UI**:
-   - Navigate to `http://localhost:8080`
-   - Login: `admin` / `admin`
-   - Find DAG: `dynamic_spark_pipeline`
-
-4. **Manually trigger the DAG**:
-   ```bash
-   docker-compose exec airflow-scheduler airflow dags trigger dynamic_spark_pipeline
-   ```
-
-5. **View logs**:
-   ```bash
-   # Scheduler logs
-   docker-compose logs -f airflow-scheduler
-   
-   # Webserver logs
-   docker-compose logs -f airflow-webserver
-   
-   # Pipeline output
-   docker-compose exec airflow-scheduler tail -f /app/airflow/logs/dynamic_spark_pipeline/*/run/*.log
-   ```
-
-6. **Stop the stack**:
-   ```bash
-   docker-compose down
-   ```
-   (Data persists in volumes; re-run `docker-compose up -d` to resume)
-
-### Configuration
-
-Edit `.env` for environment variables or `docker-compose.yml` to adjust:
-- Schedule interval (default: `0 2 * * *`)
-- Log rotation size (default: 10 MB)
-- Database credentials and ports
-
-### Troubleshooting
-
-**Webserver not responding**: Wait 30–60 seconds for PostgreSQL migration. Check logs:
-```bash
-docker-compose logs airflow-webserver
-```
-
-**Task fails with "config file not found"**: Verify `metadata/config.json` exists at the repo root.
-
-**Out of disk space**: Clean up old Docker logs:
-```bash
-docker-compose down -v  # Warning: deletes all volumes
-```
-
-### Customization
-
-- **Change schedule**: Edit `schedule_interval` in `dags/dynamic_spark_pipeline_dag.py`
-- **Add alerts**: Add email or Slack notifications to the DAG (see Airflow documentation)
-- **Scale Spark**: Replace `spark-master` service with a full Spark cluster image (e.g., `bitnami/spark`)
-- **Additional transformations**: Modify `metadata/config.json` dataflow definitions

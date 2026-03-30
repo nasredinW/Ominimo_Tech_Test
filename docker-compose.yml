@@ -1,6 +1,19 @@
 version: '3.9'
 
 services:
+  fix-permissions:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    user: "0:0"
+    working_dir: /app
+    volumes:
+      - ./data:/app/data
+    command: >
+      bash -lc "mkdir -p /app/data/output && chown -R ${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-0} /app/data/output && chmod -R g+rwX /app/data/output"
+    networks:
+      - airflow-network
+
   postgres:
     image: postgres:15-alpine
     container_name: airflow-postgres
@@ -29,7 +42,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    user: "0:0"
+    user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-0}"
     environment:
       AIRFLOW__CORE__DAGS_FOLDER: /app/dags
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -47,6 +60,7 @@ services:
       - ./metadata:/app/metadata
       - ./src:/app/src
       - ./airflow_home:/app/airflow
+      - ./airflow_variables.json:/tmp/airflow_variables.json
     ports:
       - "8080:8080"
     command: >
@@ -63,6 +77,11 @@ services:
       airflow db migrate &&
       echo 'Creating admin user...' &&
       airflow users create --username admin --password admin --firstname Admin --lastname Admin --role Admin --email admin@example.com 2>/dev/null || true &&
+      echo 'Seeding Airflow Variables...' &&
+      python -c 'import json; from airflow.models import Variable; 
+      vars_dict = json.load(open(\"/tmp/airflow_variables.json\")); 
+      [Variable.set(k, v) for k, v in vars_dict.items()]; 
+      print(\"✓ Variables seeded\")' &&
       echo 'Starting webserver...' &&
       airflow webserver --port 8080
       "
@@ -85,7 +104,7 @@ services:
         condition: service_healthy
       airflow-webserver:
         condition: service_healthy
-    user: "0:0"
+    user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-0}"
     environment:
       AIRFLOW__CORE__DAGS_FOLDER: /app/dags
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -122,9 +141,11 @@ services:
       - airflow-network
 
   spark-master:
-    image: python:3.9
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: spark-master
-    user: "0:0"
+    user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-0}"
     working_dir: /app
     volumes:
       - ./data:/app/data
@@ -132,16 +153,10 @@ services:
       - ./src:/app/src
       - spark_logs:/var/log/spark
     environment:
-      JAVA_HOME: /usr/lib/jvm/java-21-openjdk-amd64
-      SPARK_HOME: /opt/spark
+      JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
       PYTHONPATH: /app
     command: >
-      bash -c "
-      apt-get update &&
-      apt-get install -y openjdk-21-jre-headless &&
-      pip install pyspark &&
-      echo 'Spark environment ready - triggered by Airflow DAG'
-      "
+      bash -c "echo 'Spark runtime container ready (Java + PySpark installed in image)'; tail -f /dev/null"
     networks:
       - airflow-network
 

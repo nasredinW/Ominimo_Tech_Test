@@ -1,0 +1,131 @@
+{
+  "dataflows": [
+    {
+      "name": "s3-test-pipeline",
+      "description": "S3-based test pipeline for Airflow orchestration - reads from S3 input, applies transformations, writes to S3 output",
+      "sources": [
+        {
+          "name": "s3_input_data",
+          "format": "JSON",
+          "path": "data/input/s3_test_data.json",
+          "description": "Test data source from local path (JSONL format - one object per line)",
+          "options": {
+            "multiline": "false"
+          }
+        }
+      ],
+      "transformations": [
+        {
+          "name": "add_processing_metadata",
+          "type": "add_fields",
+          "params": {
+            "input": "s3_input_data",
+            "addFields": [
+              {
+                "name": "process_timestamp",
+                "function": "current_timestamp"
+              }
+            ]
+          }
+        },
+        {
+          "name": "derive_processing_date",
+          "type": "derive_column",
+          "params": {
+            "input": "add_processing_metadata",
+            "column": "processing_date",
+            "expression": "CAST(process_timestamp AS DATE)"
+          }
+        },
+        {
+          "name": "derive_environment_field",
+          "type": "derive_column",
+          "params": {
+            "input": "derive_processing_date",
+            "column": "environment",
+            "expression": "'s3-test'"
+          }
+        },
+        {
+          "name": "derive_status_field",
+          "type": "derive_column",
+          "params": {
+            "input": "derive_environment_field",
+            "column": "processing_status",
+            "expression": "CASE WHEN process_timestamp IS NOT NULL THEN 'processed' ELSE 'pending' END"
+          }
+        },
+        {
+          "name": "validate_output",
+          "type": "validate_fields",
+          "params": {
+            "input": "derive_status_field",
+            "validations": [
+              {
+                "field": "process_timestamp",
+                "validations": ["notNull"]
+              },
+              {
+                "field": "processing_status",
+                "validations": ["notEmpty"]
+              },
+              {
+                "field": "environment",
+                "validations": ["notEmpty"]
+              }
+            ]
+          }
+        }
+      ],
+      "sinks": [
+        {
+          "name": "s3_output_success",
+          "input": "validation_ok",
+          "format": "JSON",
+          "saveMode": "OVERWRITE",
+          "paths": [
+            "data/output/s3_test/processed"
+          ],
+          "description": "Valid records output to S3"
+        },
+        {
+          "name": "s3_output_failed",
+          "input": "validation_ko",
+          "format": "JSON",
+          "saveMode": "OVERWRITE",
+          "paths": [
+            "data/output/s3_test/rejected"
+          ],
+          "description": "Failed validation records to S3"
+        },
+        {
+          "name": "s3_output_parquet",
+          "input": "validation_ok",
+          "format": "PARQUET",
+          "saveMode": "OVERWRITE",
+          "paths": [
+            "data/output/s3_test/parquet"
+          ],
+          "description": "Processed data in Parquet format for S3"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "created_date": "2026-03-29",
+    "purpose": "S3 Integration Test Configuration",
+    "environment": "production",
+    "s3_bucket": "s3ominimotest",
+    "s3_regions": ["us-east-1"],
+    "notes": [
+      "This configuration tests S3 upload functionality via Airflow DAG",
+      "Input path: data/input/ (local)",
+      "Metadata path: metadata/ (local)",
+      "Output path: data/output/ (local first, then synced to S3 by DAG)",
+      "Transformations: add metadata → derive status → validate",
+      "Output: split into success/rejected paths + Parquet format",
+      "Note: DAG handles S3 upload after local processing completes"
+    ]
+  }
+}
