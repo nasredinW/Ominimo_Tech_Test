@@ -53,9 +53,9 @@ python src/main.py --config metadata/config_s3_test.json --app-name "S3Test"
 ### Notes
 
 - Config placeholders `${VAR_NAME}` are supported and resolved from environment variables (see `ConfigResolver` in [src/main.py](src/main.py)).
-- Output versioning is enabled by default (see [src/writer.py](src/writer.py)).
-  - Disable with: `export OUTPUT_VERSIONING=false`
-  - When enabled, outputs are written under `_versions/<run_id>/` and a `_latest` pointer (or `LATEST` marker) is updated.
+- Output versioning is disabled by default (see [src/writer.py](src/writer.py)).
+	- Enable with: `export OUTPUT_VERSIONING=true` (or set `"versioning": true` per sink)
+	- When enabled, outputs are written under `_versions/<run_id>/` and a `_latest` pointer (or `LATEST` marker) is updated.
 
 ## Config file structure (professional reference)
 

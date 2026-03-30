@@ -1,0 +1,261 @@
+{
+  "dataflows": [
+    {
+      "name": "full-demo-all-transformers-and-validators",
+      "description": "End-to-end demo that exercises all transformation handlers + a broad set of validators (produces both OK and KO outputs)",
+      "sources": [
+        {
+          "name": "demo_raw",
+          "format": "JSON",
+          "path": "data/input/full_demo.json",
+          "description": "JSONL input: one JSON object per line",
+          "options": {
+            "multiline": "false"
+          }
+        }
+      ],
+      "transformations": [
+        {
+          "name": "rename_fields",
+          "type": "rename_columns",
+          "params": {
+            "input": "demo_raw",
+            "mappings": {
+              "clientId": "client_id",
+              "fullName": "full_name"
+            }
+          }
+        },
+        {
+          "name": "derive_age_bucket",
+          "type": "derive_column",
+          "params": {
+            "input": "rename_fields",
+            "column": "age_bucket",
+            "expression": "CASE WHEN age >= 60 THEN 'senior' WHEN age >= 18 THEN 'adult' ELSE 'minor' END"
+          }
+        },
+        {
+          "name": "filter_us_only",
+          "type": "filter_rows",
+          "params": {
+            "input": "derive_age_bucket",
+            "condition": "country = 'US'"
+          }
+        },
+        {
+          "name": "add_processing_metadata",
+          "type": "add_fields",
+          "params": {
+            "input": "filter_us_only",
+            "addFields": [
+              {
+                "name": "process_timestamp",
+                "function": "current_timestamp"
+              }
+            ]
+          }
+        },
+        {
+          "name": "drop_extra",
+          "type": "drop_columns",
+          "params": {
+            "input": "add_processing_metadata",
+            "columns": [
+              "extra"
+            ]
+          }
+        },
+        {
+          "name": "select_core",
+          "type": "select_columns",
+          "params": {
+            "input": "drop_extra",
+            "columns": [
+              "client_id",
+              "full_name",
+              "email",
+              "phone",
+              "age",
+              "status",
+              "country",
+              "zip",
+              "notes",
+              "age_bucket",
+              "process_timestamp"
+            ]
+          }
+        },
+        {
+          "name": "derive_processing_date",
+          "type": "derive_column",
+          "params": {
+            "input": "select_core",
+            "column": "processing_date",
+            "expression": "CAST(process_timestamp AS DATE)"
+          }
+        },
+        {
+          "name": "validate_demo",
+          "type": "validate_fields",
+          "params": {
+            "input": "derive_processing_date",
+            "validations": [
+              {
+                "field": "client_id",
+                "validations": [
+                  {
+                    "type": "notEmpty",
+                    "message": "client_id is required"
+                  },
+                  {
+                    "type": "pattern",
+                    "regex": "^c-[0-9]{3}$",
+                    "message": "client_id must match c-001 format"
+                  }
+                ]
+              },
+              {
+                "field": "full_name",
+                "validations": [
+                  {
+                    "type": "notEmpty",
+                    "message": "full_name is required"
+                  },
+                  {
+                    "type": "minLength",
+                    "value": 2,
+                    "message": "full_name must be at least 2 characters"
+                  },
+                  {
+                    "type": "maxLength",
+                    "value": 80,
+                    "message": "full_name must be <= 80 characters"
+                  }
+                ]
+              },
+              {
+                "field": "email",
+                "validations": [
+                  {
+                    "type": "notEmpty",
+                    "message": "email is required"
+                  },
+                  {
+                    "type": "email",
+                    "message": "email must be valid"
+                  }
+                ]
+              },
+              {
+                "field": "phone",
+                "validations": [
+                  {
+                    "type": "phone",
+                    "message": "phone must be E.164 format (e.g. +14155552671)"
+                  }
+                ]
+              },
+              {
+                "field": "age",
+                "validations": [
+                  {
+                    "type": "notNull",
+                    "message": "age is required"
+                  },
+                  {
+                    "type": "integer",
+                    "message": "age must be an integer"
+                  },
+                  {
+                    "type": "between",
+                    "min": 0,
+                    "max": 150,
+                    "message": "age must be between 0 and 150"
+                  }
+                ]
+              },
+              {
+                "field": "status",
+                "validations": [
+                  {
+                    "type": "inList",
+                    "values": [
+                      "ACTIVE",
+                      "PENDING",
+                      "INACTIVE",
+                      "SUSPENDED"
+                    ],
+                    "message": "status must be one of ACTIVE/PENDING/INACTIVE/SUSPENDED"
+                  }
+                ]
+              },
+              {
+                "field": "zip",
+                "validations": [
+                  {
+                    "type": "pattern",
+                    "regex": "^[0-9]{5}$",
+                    "message": "zip must be US 5-digit format"
+                  }
+                ]
+              },
+              {
+                "field": "notes",
+                "validations": [
+                  {
+                    "type": "custom_sql",
+                    "expression": "{column} IS NULL OR length({column}) <= 50",
+                    "message": "notes must be <= 50 characters"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "sinks": [
+        {
+          "name": "demo_ok_json",
+          "input": "validation_ok",
+          "format": "JSON",
+          "saveMode": "OVERWRITE",
+          "paths": [
+            "data/output/full_demo/ok/json"
+          ],
+          "description": "Valid records (JSON)"
+        },
+        {
+          "name": "demo_ko_json",
+          "input": "validation_ko",
+          "format": "JSON",
+          "saveMode": "OVERWRITE",
+          "paths": [
+            "data/output/full_demo/ko/json"
+          ],
+          "description": "Invalid records with validation_errors (JSON)"
+        },
+        {
+          "name": "demo_ok_parquet",
+          "input": "validation_ok",
+          "format": "PARQUET",
+          "saveMode": "OVERWRITE",
+          "paths": [
+            "data/output/full_demo/ok/parquet"
+          ],
+          "description": "Valid records (Parquet)"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "created_date": "2026-03-30",
+    "purpose": "Full functionality demo config",
+    "notes": [
+      "Exercises: rename_columns, derive_column, filter_rows, add_fields, drop_columns, select_columns, validate_fields",
+      "Input is JSONL: data/input/full_demo.json",
+      "Produces both validation_ok and validation_ko outputs"
+    ]
+  }
+}

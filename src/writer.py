@@ -36,15 +36,19 @@ def _get_run_id() -> str:
 
 
 def _versioning_enabled_for_sink(sink: dict) -> bool:
-    """Enable result versioning by default for production-like behavior.
+    """Enable/disable output versioning.
 
-    - Can be disabled with OUTPUT_VERSIONING=0/false
-    - Can be explicitly set per sink via: versioning: true/false or versioning: {enabled: true/false}
+    Default: disabled 
+
+    Overrides:
+    - Enable globally with OUTPUT_VERSIONING=1/true
+    - Disable globally with OUTPUT_VERSIONING=0/false
+    - Per-sink override via: versioning: true/false or versioning: {enabled: true/false}
     """
 
     env_flag = os.getenv("OUTPUT_VERSIONING")
-    if env_flag is not None and not _env_truthy(env_flag):
-        return False
+    if env_flag is not None:
+        return _env_truthy(env_flag)
 
     cfg = sink.get("versioning")
     if isinstance(cfg, bool):
@@ -54,7 +58,7 @@ def _versioning_enabled_for_sink(sink: dict) -> bool:
         if isinstance(enabled, bool):
             return enabled
 
-    return True
+    return False
 
 
 def _join_uri(base_uri: str, *parts: str) -> str:

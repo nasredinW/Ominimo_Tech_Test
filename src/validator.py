@@ -9,6 +9,7 @@ Applies comprehensive validation rules to DataFrames with:
 """
 
 import os
+import re
 from functools import reduce
 from pyspark.sql import functions as F
 from typing import Dict, List, Tuple, Any
@@ -62,7 +63,9 @@ class DataQualityValidator:
             raise TypeError("Validation rules must be a list")
         
         if not rules:
-            empty_ko = df.limit(0).withColumn("validation_errors", F.lit(None).cast("string"))
+            empty_ko = df.limit(0) \
+                .withColumn("validation_errors", F.lit(None).cast("map<string,array<string>>")) \
+                .withColumn("validation_errors_text", F.lit(None).cast("string"))
             return df, empty_ko
         
         # Build conditions for each field
@@ -120,7 +123,9 @@ class DataQualityValidator:
         # Combine all field conditions (ALL fields must pass)
         all_conditions = list(field_conditions.values())
         if not all_conditions:
-            empty_ko = df.limit(0).withColumn("validation_errors", F.lit(None).cast("string"))
+            empty_ko = df.limit(0) \
+                .withColumn("validation_errors", F.lit(None).cast("map<string,array<string>>")) \
+                .withColumn("validation_errors_text", F.lit(None).cast("string"))
             return df, empty_ko
         
         final_condition = reduce(lambda a, b: a & b, all_conditions)
@@ -135,6 +140,46 @@ class DataQualityValidator:
 
         # Only compute error messages for invalid rows.
         invalid_df = df.filter(~final_condition)
+
+        # Build structured per-field validation errors (object-like in JSON output):
+        # { "field": ["msg1", "msg2"], ... }
+        max_per_field = DataQualityValidator._get_int_env("VALIDATION_MAX_ERRORS_PER_FIELD", 50)
+
+        entry_cols = []
+        temp_field_cols = []
+        for field_name, error_cols in field_errors.items():
+            safe_field = re.sub(r"[^A-Za-z0-9_]+", "_", str(field_name)).strip("_") or "field"
+            raw_col = f"__validation_errors_raw_{safe_field}"
+            filtered_col = f"__validation_errors_{safe_field}"
+
+            invalid_df = invalid_df.withColumn(raw_col, F.array(*error_cols))
+            invalid_df = invalid_df.withColumn(filtered_col, F.expr(f"filter({raw_col}, x -> x is not null)"))
+
+            temp_field_cols.extend([raw_col, filtered_col])
+
+            field_arr = F.col(filtered_col)
+            if max_per_field > 0:
+                field_arr = F.slice(field_arr, 1, max_per_field)
+
+            entry_cols.append(
+                F.when(
+                    F.size(field_arr) > 0,
+                    F.struct(F.lit(field_name).alias("key"), field_arr.alias("value")),
+                )
+            )
+
+        invalid_df = invalid_df.withColumn("__validation_error_entries_raw", F.array(*entry_cols))
+        invalid_df = invalid_df.withColumn(
+            "__validation_error_entries",
+            F.expr("filter(__validation_error_entries_raw, x -> x is not null)")
+        )
+        invalid_df = invalid_df.withColumn(
+            "validation_errors",
+            F.when(
+                F.size(F.col("__validation_error_entries")) == 0,
+                F.expr("map()"),
+            ).otherwise(F.map_from_entries(F.col("__validation_error_entries")))
+        )
 
         # Create a structured array of error strings first; then optionally truncate and stringify.
         invalid_df = invalid_df.withColumn("__validation_errors_raw", F.array(*all_error_labels))
@@ -160,14 +205,22 @@ class DataQualityValidator:
             errors_str = F.concat_ws("; ", errors_arr_col)
 
         invalid_df = invalid_df.withColumn(
-            "validation_errors",
+            "validation_errors_text",
             F.when(F.size(errors_arr_col) == 0, F.lit("Unknown validation error")).otherwise(errors_str)
         )
 
         if keep_array:
             invalid_df = invalid_df.withColumn("validation_errors_array", errors_arr_col)
 
-        invalid_df = invalid_df.drop("__validation_errors_raw", "__validation_errors")
+        invalid_df = invalid_df.drop(
+            "__validation_error_entries_raw",
+            "__validation_error_entries",
+            "__validation_errors_raw",
+            "__validation_errors",
+        )
+
+        if temp_field_cols:
+            invalid_df = invalid_df.drop(*temp_field_cols)
         
         return valid_df, invalid_df
     

@@ -1,0 +1,6 @@
+{"clientId":"c-001","fullName":"Alice Johnson","email":"alice@example.com","phone":"+14155552671","age":34,"status":"ACTIVE","country":"US","zip":"94105","notes":"premium customer","extra":"drop_me"}
+{"clientId":"c-002","fullName":"B","email":"bad-email","phone":"+33123456789","age":25,"status":"ACTIVE","country":"US","zip":"75001","notes":"","extra":"drop_me"}
+{"clientId":"c-003","fullName":"Charlie Smith","email":"charlie@example.com","phone":null,"age":52,"status":"PENDING","country":"US","zip":"10001","notes":"vip","extra":"drop_me"}
+{"clientId":"c-004","fullName":"Dana Lee","email":"dana@example.com","phone":"+442071838750","age":-5,"status":"ACTIVE","country":"US","zip":"SW1A1AA","notes":"negative age","extra":"drop_me"}
+{"clientId":"c-005","fullName":"Evan Brown","email":"evan@example.com","phone":"+4989123456","age":151,"status":"GOLD","country":"US","zip":"30301","notes":"status not allowed","extra":"drop_me"}
+{"clientId":"c-006","fullName":"Frank Miller","email":"frank@example.com","phone":"+12125551212","age":19,"status":"INACTIVE","country":"CA","zip":"H2Y1C6","notes":"filtered out by country","extra":"drop_me"}
