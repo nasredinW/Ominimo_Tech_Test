@@ -24,6 +24,7 @@ env/
 # Logs
 *.log
 logs/
+logs/*.log
 airflow_home/logs/
 airflow_home/airflow-webserver.pid
 

@@ -2,7 +2,6 @@
                                              Transformations Registry
                     Features:
                     - Type hints for better IDE support and error detection
-                    - Pydantic for robust parameter validation
                     - Decorators for cross-cutting concerns (validation, error handling)
                     - Automatic handler registration via __init_subclass__
                     - Custom exception hierarchy
@@ -242,8 +241,8 @@ class SelectColumnsHandler(TransformationHandler):
         
         if not isinstance(columns, list):
             raise ValidationError(f"'columns' must be a list, got {type(columns)}")
-        
-        return self.df.select(columns)
+
+        return self.df.select(*columns)
 
 
 class RenameColumnsHandler(TransformationHandler):

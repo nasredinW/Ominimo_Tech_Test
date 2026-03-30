@@ -8,6 +8,7 @@ Responsibilities:
 """
 
 import logging
+import os
 from typing import Dict, Any, List, Tuple
 
 from pyspark.sql import SparkSession, DataFrame
@@ -22,6 +23,21 @@ from transformers import (
 from writer import write_output
 
 logger = logging.getLogger(__name__)
+
+
+def _env_truthy(value: str) -> bool:
+    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _should_log_row_counts() -> bool:
+    """Whether to log expensive Spark row counts.
+
+    Default is enabled to preserve current behavior.
+    Disable with: PIPELINE_LOG_ROW_COUNTS=false
+    """
+
+    flag = os.getenv("PIPELINE_LOG_ROW_COUNTS")
+    return True if flag is None else _env_truthy(flag)
 
 
 class PipelineEngine:
@@ -113,7 +129,10 @@ class PipelineEngine:
             try:
                 df = read_source(self.spark, source)
                 self.dataframes[source_name] = df
-                logger.info(f"✓ Loaded source: {source_name} ({df.count()} rows)")
+                if _should_log_row_counts():
+                    logger.info(f"✓ Loaded source: {source_name} ({df.count()} rows)")
+                else:
+                    logger.info(f"✓ Loaded source: {source_name}")
             except Exception as e:
                 raise KeyError(f"Failed to load source '{source_name}': {e}") from e
     
@@ -205,19 +224,25 @@ class PipelineEngine:
                 ok_df, ko_df = result
                 self.dataframes["validation_ok"] = ok_df
                 self.dataframes["validation_ko"] = ko_df
-                logger.info(
-                    f"✓ Transformation '{step_name}' (validate_fields): "
-                    f"{ok_df.count()} valid, {ko_df.count()} invalid"
-                )
+                if _should_log_row_counts():
+                    logger.info(
+                        f"✓ Transformation '{step_name}' (validate_fields): "
+                        f"{ok_df.count()} valid, {ko_df.count()} invalid"
+                    )
+                else:
+                    logger.info(f"✓ Transformation '{step_name}' (validate_fields)")
             else:
                 if not step_name:
                     raise ValueError(
                         f"Transformation of type '{step_type}' must define a non-empty 'name'"
                     )
                 self.dataframes[step_name] = result
-                logger.info(
-                    f"✓ Transformation '{step_name}' ({step_type}): {result.count()} rows"
-                )
+                if _should_log_row_counts():
+                    logger.info(
+                        f"✓ Transformation '{step_name}' ({step_type}): {result.count()} rows"
+                    )
+                else:
+                    logger.info(f"✓ Transformation '{step_name}' ({step_type})")
         
         except (ValidationError, ExecutionError) as exc:
             raise RuntimeError(

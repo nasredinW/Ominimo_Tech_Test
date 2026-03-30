@@ -3039,3 +3039,122 @@ RuntimeError: Failed to write sink 'clients_clean': Sink 'clients_clean' cannot 
 2026-03-30 02:01:36,263 - __main__ - INFO - [main.py:123] - ✓ PIPELINE COMPLETED SUCCESSFULLY
 2026-03-30 02:01:36,263 - __main__ - INFO - [main.py:124] - ================================================================================
 2026-03-30 02:01:36,263 - __main__ - INFO - [main.py:132] - Stopping Spark session...
+2026-03-30 02:14:30,848 - __main__ - INFO - [main.py:109] - ================================================================================
+2026-03-30 02:14:30,848 - __main__ - INFO - [main.py:110] - STARTING DYNAMIC SPARK PIPELINE
+2026-03-30 02:14:30,848 - __main__ - INFO - [main.py:111] - ================================================================================
+2026-03-30 02:14:30,848 - __main__ - INFO - [main.py:53] - Loading config from metadata/config_s3_test.json
+2026-03-30 02:14:30,849 - __main__ - INFO - [main.py:45] - Resolving environment variable placeholders in config...
+2026-03-30 02:14:30,849 - __main__ - INFO - [main.py:94] - Creating Spark session: MyPipeline
+2026-03-30 02:14:40,729 - __main__ - INFO - [main.py:117] - Executing 1 dataflow(s)...
+2026-03-30 02:14:48,059 - __main__ - ERROR - [main.py:127] - ✗ Pipeline execution failed: Failed to write sink 's3_output_success': Sink 's3_output_success' cannot create local output directory 'data/output/s3_test/processed/_versions/20260330T011448Z'
+Traceback (most recent call last):
+  File "/home/bnm/Desktop/ominimotest/data-test/src/writer.py", line 163, in write_output
+    os.makedirs(effective_local_path, exist_ok=True)
+  File "/usr/lib/python3.10/os.py", line 225, in makedirs
+    mkdir(name, mode)
+PermissionError: [Errno 13] Permission denied: 'data/output/s3_test/processed/_versions/20260330T011448Z'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/bnm/Desktop/ominimotest/data-test/src/engine.py", line 290, in _execute_sinks
+    write_output(self.dataframes[sink_input], sink)
+  File "/home/bnm/Desktop/ominimotest/data-test/src/writer.py", line 165, in write_output
+    raise RuntimeError(
+RuntimeError: Sink 's3_output_success' cannot create local output directory 'data/output/s3_test/processed/_versions/20260330T011448Z'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/bnm/Desktop/ominimotest/data-test/src/main.py", line 120, in run
+    engine.run()
+  File "/home/bnm/Desktop/ominimotest/data-test/src/engine.py", line 68, in run
+    self._execute_sinks(flow.get("sinks", []))
+  File "/home/bnm/Desktop/ominimotest/data-test/src/engine.py", line 294, in _execute_sinks
+    raise RuntimeError(f"Failed to write sink '{sink_name}': {e}") from e
+RuntimeError: Failed to write sink 's3_output_success': Sink 's3_output_success' cannot create local output directory 'data/output/s3_test/processed/_versions/20260330T011448Z'
+2026-03-30 02:14:48,061 - __main__ - INFO - [main.py:132] - Stopping Spark session...
+2026-03-30 02:14:48,674 - __main__ - CRITICAL - [main.py:190] - Fatal error: Failed to write sink 's3_output_success': Sink 's3_output_success' cannot create local output directory 'data/output/s3_test/processed/_versions/20260330T011448Z'
+2026-03-30 02:15:20,298 - __main__ - INFO - [main.py:109] - ================================================================================
+2026-03-30 02:15:20,298 - __main__ - INFO - [main.py:110] - STARTING DYNAMIC SPARK PIPELINE
+2026-03-30 02:15:20,298 - __main__ - INFO - [main.py:111] - ================================================================================
+2026-03-30 02:15:20,298 - __main__ - INFO - [main.py:53] - Loading config from metadata/config_s3_test.json
+2026-03-30 02:15:20,299 - __main__ - INFO - [main.py:45] - Resolving environment variable placeholders in config...
+2026-03-30 02:15:20,299 - __main__ - INFO - [main.py:94] - Creating Spark session: MyPipeline
+2026-03-30 02:15:29,103 - __main__ - INFO - [main.py:117] - Executing 1 dataflow(s)...
+2026-03-30 02:15:36,260 - __main__ - ERROR - [main.py:127] - ✗ Pipeline execution failed: Failed to write sink 's3_output_success': Sink 's3_output_success' cannot create local output directory 'data/output/s3_test/processed/_versions/20260330T011536Z'
+Traceback (most recent call last):
+  File "/home/bnm/Desktop/ominimotest/data-test/src/writer.py", line 163, in write_output
+    os.makedirs(effective_local_path, exist_ok=True)
+  File "/usr/lib/python3.10/os.py", line 225, in makedirs
+    mkdir(name, mode)
+PermissionError: [Errno 13] Permission denied: 'data/output/s3_test/processed/_versions/20260330T011536Z'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/bnm/Desktop/ominimotest/data-test/src/engine.py", line 290, in _execute_sinks
+    write_output(self.dataframes[sink_input], sink)
+  File "/home/bnm/Desktop/ominimotest/data-test/src/writer.py", line 165, in write_output
+    raise RuntimeError(
+RuntimeError: Sink 's3_output_success' cannot create local output directory 'data/output/s3_test/processed/_versions/20260330T011536Z'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/bnm/Desktop/ominimotest/data-test/src/main.py", line 120, in run
+    engine.run()
+  File "/home/bnm/Desktop/ominimotest/data-test/src/engine.py", line 68, in run
+    self._execute_sinks(flow.get("sinks", []))
+  File "/home/bnm/Desktop/ominimotest/data-test/src/engine.py", line 294, in _execute_sinks
+    raise RuntimeError(f"Failed to write sink '{sink_name}': {e}") from e
+RuntimeError: Failed to write sink 's3_output_success': Sink 's3_output_success' cannot create local output directory 'data/output/s3_test/processed/_versions/20260330T011536Z'
+2026-03-30 02:15:36,264 - __main__ - INFO - [main.py:132] - Stopping Spark session...
+2026-03-30 02:15:36,800 - __main__ - CRITICAL - [main.py:190] - Fatal error: Failed to write sink 's3_output_success': Sink 's3_output_success' cannot create local output directory 'data/output/s3_test/processed/_versions/20260330T011536Z'
+2026-03-30 02:16:16,768 - __main__ - INFO - [main.py:109] - ================================================================================
+2026-03-30 02:16:16,768 - __main__ - INFO - [main.py:110] - STARTING DYNAMIC SPARK PIPELINE
+2026-03-30 02:16:16,768 - __main__ - INFO - [main.py:111] - ================================================================================
+2026-03-30 02:16:16,768 - __main__ - INFO - [main.py:53] - Loading config from metadata/config_clients.json
+2026-03-30 02:16:16,769 - __main__ - INFO - [main.py:45] - Resolving environment variable placeholders in config...
+2026-03-30 02:16:16,769 - __main__ - INFO - [main.py:94] - Creating Spark session: MyPipeline
+2026-03-30 02:16:24,214 - __main__ - INFO - [main.py:117] - Executing 1 dataflow(s)...
+2026-03-30 02:16:31,123 - __main__ - ERROR - [main.py:127] - ✗ Pipeline execution failed: Failed to write sink 'clients_clean': Sink 'clients_clean' cannot create local output directory 'data/output/clients/processed/_versions/20260330T011631Z'
+Traceback (most recent call last):
+  File "/home/bnm/Desktop/ominimotest/data-test/src/writer.py", line 163, in write_output
+    os.makedirs(effective_local_path, exist_ok=True)
+  File "/usr/lib/python3.10/os.py", line 225, in makedirs
+    mkdir(name, mode)
+PermissionError: [Errno 13] Permission denied: 'data/output/clients/processed/_versions/20260330T011631Z'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/bnm/Desktop/ominimotest/data-test/src/engine.py", line 290, in _execute_sinks
+    write_output(self.dataframes[sink_input], sink)
+  File "/home/bnm/Desktop/ominimotest/data-test/src/writer.py", line 165, in write_output
+    raise RuntimeError(
+RuntimeError: Sink 'clients_clean' cannot create local output directory 'data/output/clients/processed/_versions/20260330T011631Z'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/bnm/Desktop/ominimotest/data-test/src/main.py", line 120, in run
+    engine.run()
+  File "/home/bnm/Desktop/ominimotest/data-test/src/engine.py", line 68, in run
+    self._execute_sinks(flow.get("sinks", []))
+  File "/home/bnm/Desktop/ominimotest/data-test/src/engine.py", line 294, in _execute_sinks
+    raise RuntimeError(f"Failed to write sink '{sink_name}': {e}") from e
+RuntimeError: Failed to write sink 'clients_clean': Sink 'clients_clean' cannot create local output directory 'data/output/clients/processed/_versions/20260330T011631Z'
+2026-03-30 02:16:31,126 - __main__ - INFO - [main.py:132] - Stopping Spark session...
+2026-03-30 02:16:31,422 - __main__ - CRITICAL - [main.py:190] - Fatal error: Failed to write sink 'clients_clean': Sink 'clients_clean' cannot create local output directory 'data/output/clients/processed/_versions/20260330T011631Z'
+2026-03-30 02:16:55,226 - __main__ - INFO - [main.py:109] - ================================================================================
+2026-03-30 02:16:55,227 - __main__ - INFO - [main.py:110] - STARTING DYNAMIC SPARK PIPELINE
+2026-03-30 02:16:55,227 - __main__ - INFO - [main.py:111] - ================================================================================
+2026-03-30 02:16:55,227 - __main__ - INFO - [main.py:53] - Loading config from metadata/config_clients.json
+2026-03-30 02:16:55,227 - __main__ - INFO - [main.py:45] - Resolving environment variable placeholders in config...
+2026-03-30 02:16:55,227 - __main__ - INFO - [main.py:94] - Creating Spark session: MyPipeline
+2026-03-30 02:17:01,183 - __main__ - INFO - [main.py:117] - Executing 1 dataflow(s)...
+2026-03-30 02:17:08,426 - __main__ - INFO - [main.py:122] - ================================================================================
+2026-03-30 02:17:08,427 - __main__ - INFO - [main.py:123] - ✓ PIPELINE COMPLETED SUCCESSFULLY
+2026-03-30 02:17:08,427 - __main__ - INFO - [main.py:124] - ================================================================================
+2026-03-30 02:17:08,427 - __main__ - INFO - [main.py:132] - Stopping Spark session...

@@ -1,3 +1,21 @@
+import os
+
+
+def _env_truthy(value: str) -> bool:
+    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _should_log_row_counts() -> bool:
+    """Whether to log expensive Spark row counts.
+
+    Default is enabled to preserve current behavior.
+    Disable with: PIPELINE_LOG_ROW_COUNTS=false
+    """
+
+    flag = os.getenv("PIPELINE_LOG_ROW_COUNTS")
+    return True if flag is None else _env_truthy(flag)
+
+
 def read_source(spark, source_config):
     if not isinstance(source_config, dict):
         raise TypeError("source_config must be a dictionary")
@@ -27,7 +45,10 @@ def read_source(spark, source_config):
             reader = reader.options(**source_options)
         
         df = reader.load(source_path)
-        logger.info(f"✓ Successfully read {storage_type} source '{source_name}' ({df.count()} records)")
+        if _should_log_row_counts():
+            logger.info(f"✓ Successfully read {storage_type} source '{source_name}' ({df.count()} records)")
+        else:
+            logger.info(f"✓ Successfully read {storage_type} source '{source_name}'")
         
         return df
     except Exception as exc:

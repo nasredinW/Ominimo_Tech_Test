@@ -92,6 +92,7 @@ class DataQualityValidator:
             for validator_config in validators:
                 try:
                     condition = ValidatorRegistry.build_condition(field, validator_config)
+                    condition = F.coalesce(condition, F.lit(False))
                     field_validators.append(condition)
                     
                     # Generate error message: validator message > field message > default
@@ -105,7 +106,7 @@ class DataQualityValidator:
                     error_msg = validator_message or custom_message or f"{field}:{validator_type}"
                     field_error_labels.append(F.when(~condition, F.lit(error_msg)))
                     
-                except (ValidatorNotFoundError, InvalidValidationConfig) as e:
+                except (ValidatorNotFoundError, InvalidValidationConfig, ValueError, TypeError) as e:
                     raise InvalidValidationConfig(
                         f"Error in field '{field}': {str(e)}"
                     )
