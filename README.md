@@ -181,7 +181,7 @@ The Airflow DAG is defined in [dags/dynamic_spark_pipeline_dag.py](dags/dynamic_
 flowchart LR
   T1[extract_config_from_s3] --> T2[download_sources_from_s3]
   T2 --> T3[validate_source_data]
-  T3 --> T4[apply_transformations]\n(calls Spark pipeline)
+	T3 --> T4["apply_transformations<br/>(calls Spark pipeline)"]
   T4 --> T5[upload_outputs_to_s3]
   T5 --> T6[pipeline_execution_summary]
 ```
@@ -207,39 +207,4 @@ flowchart LR
 	- If disabled, it only verifies outputs exist locally.
 6. **pipeline_execution_summary**
 	- Logs a human-readable summary of the run.
-
-## Implementation review (transformers + validations + overall)
-
-This is a code review summary based on the current implementation.
-
-### Transformers ([src/transformers.py](src/transformers.py))
-
-What’s good:
-
-- **Registry pattern** via `__init_subclass__`: adding a new handler is simple and discoverable.
-- **Consistent error wrapping** via `handle_execution_errors`.
-- **Config-first design**: transformations map cleanly to JSON.
-
-Risks / improvements (if you want to harden it):
-
-- `ValidateFieldsHandler.execute()` returns a tuple `(ok_df, ko_df)` but is annotated as `DataFrame`.
-- Logging uses `print(...)` inside `log_transformation`; using the project logger would integrate better with Airflow logs.
-- `require_params(...)` treats empty lists/dicts as “missing” (usually OK, but worth being aware of for optional params).
-
-### Validations ([src/validations.py](src/validations.py), [src/validator.py](src/validator.py))
-
-What’s good:
-
-- Strong separation: **condition building** (registry) vs **application/splitting** (validator).
-- Supports both **string validators** and **dict validators with params**.
-- Produces an `invalid_df` with a `validation_errors` column for debugging and observability.
-
-Risks / improvements:
-
-- `DataQualityValidator.get_validation_stats()` calls `.count()` multiple times (expensive on large data). If needed, compute counts once.
-- Validation error concatenation is good for debugging, but can be long for wide rule sets; consider truncation or a structured array if required later.
-
-### Overall pipeline
-
-- The pipeline is clear and extensible, but note that `.count()` is used in multiple places (sources and after transformations). That’s fine for small datasets, but it will slow down large runs.
 
