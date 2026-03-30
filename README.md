@@ -216,6 +216,17 @@ flowchart TD
 		E --> H
 ```
 
+### Flow Explanation
+
+- Airflow triggers the pipeline with the required parameters.
+- Processing Engine reads sources and metadata.
+- Dynamic generation of transformations and validations.
+- Validation Engine applies rules and produces `validation_errors`.
+- Data Split:
+	- OK → main storage (/events)
+	- KO → reject storage (/discards)
+- Logs and errors are persisted for audit and traceability.
+
 ### What each task does
 
 1. **extract_config_from_s3**
