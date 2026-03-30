@@ -2992,3 +2992,50 @@ FileNotFoundError: Config file not found: metadata/s3_test_data.json
 2026-03-30 01:16:02,014 - __main__ - INFO - [main.py:123] - ✓ PIPELINE COMPLETED SUCCESSFULLY
 2026-03-30 01:16:02,014 - __main__ - INFO - [main.py:124] - ================================================================================
 2026-03-30 01:16:02,014 - __main__ - INFO - [main.py:132] - Stopping Spark session...
+2026-03-30 02:00:42,322 - __main__ - INFO - [main.py:109] - ================================================================================
+2026-03-30 02:00:42,323 - __main__ - INFO - [main.py:110] - STARTING DYNAMIC SPARK PIPELINE
+2026-03-30 02:00:42,323 - __main__ - INFO - [main.py:111] - ================================================================================
+2026-03-30 02:00:42,323 - __main__ - INFO - [main.py:53] - Loading config from metadata/config_clients.json
+2026-03-30 02:00:42,323 - __main__ - INFO - [main.py:45] - Resolving environment variable placeholders in config...
+2026-03-30 02:00:42,323 - __main__ - INFO - [main.py:94] - Creating Spark session: MyPipeline
+2026-03-30 02:00:48,440 - __main__ - INFO - [main.py:117] - Executing 1 dataflow(s)...
+2026-03-30 02:00:53,492 - __main__ - ERROR - [main.py:127] - ✗ Pipeline execution failed: Failed to write sink 'clients_clean': Sink 'clients_clean' cannot create local output directory 'data/output/clients/processed/_versions/20260330T010053Z'
+Traceback (most recent call last):
+  File "/home/bnm/Desktop/ominimotest/data-test/src/writer.py", line 163, in write_output
+    os.makedirs(effective_local_path, exist_ok=True)
+  File "/usr/lib/python3.10/os.py", line 225, in makedirs
+    mkdir(name, mode)
+PermissionError: [Errno 13] Permission denied: 'data/output/clients/processed/_versions/20260330T010053Z'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/bnm/Desktop/ominimotest/data-test/src/engine.py", line 265, in _execute_sinks
+    write_output(self.dataframes[sink_input], sink)
+  File "/home/bnm/Desktop/ominimotest/data-test/src/writer.py", line 165, in write_output
+    raise RuntimeError(
+RuntimeError: Sink 'clients_clean' cannot create local output directory 'data/output/clients/processed/_versions/20260330T010053Z'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/bnm/Desktop/ominimotest/data-test/src/main.py", line 120, in run
+    engine.run()
+  File "/home/bnm/Desktop/ominimotest/data-test/src/engine.py", line 52, in run
+    self._execute_sinks(flow.get("sinks", []))
+  File "/home/bnm/Desktop/ominimotest/data-test/src/engine.py", line 269, in _execute_sinks
+    raise RuntimeError(f"Failed to write sink '{sink_name}': {e}") from e
+RuntimeError: Failed to write sink 'clients_clean': Sink 'clients_clean' cannot create local output directory 'data/output/clients/processed/_versions/20260330T010053Z'
+2026-03-30 02:00:53,495 - __main__ - INFO - [main.py:132] - Stopping Spark session...
+2026-03-30 02:00:53,728 - __main__ - CRITICAL - [main.py:190] - Fatal error: Failed to write sink 'clients_clean': Sink 'clients_clean' cannot create local output directory 'data/output/clients/processed/_versions/20260330T010053Z'
+2026-03-30 02:01:21,169 - __main__ - INFO - [main.py:109] - ================================================================================
+2026-03-30 02:01:21,169 - __main__ - INFO - [main.py:110] - STARTING DYNAMIC SPARK PIPELINE
+2026-03-30 02:01:21,169 - __main__ - INFO - [main.py:111] - ================================================================================
+2026-03-30 02:01:21,169 - __main__ - INFO - [main.py:53] - Loading config from metadata/config_clients.json
+2026-03-30 02:01:21,169 - __main__ - INFO - [main.py:45] - Resolving environment variable placeholders in config...
+2026-03-30 02:01:21,169 - __main__ - INFO - [main.py:94] - Creating Spark session: MyPipeline
+2026-03-30 02:01:28,053 - __main__ - INFO - [main.py:117] - Executing 1 dataflow(s)...
+2026-03-30 02:01:36,263 - __main__ - INFO - [main.py:122] - ================================================================================
+2026-03-30 02:01:36,263 - __main__ - INFO - [main.py:123] - ✓ PIPELINE COMPLETED SUCCESSFULLY
+2026-03-30 02:01:36,263 - __main__ - INFO - [main.py:124] - ================================================================================
+2026-03-30 02:01:36,263 - __main__ - INFO - [main.py:132] - Stopping Spark session...
