@@ -186,6 +186,36 @@ flowchart LR
   T5 --> T6[pipeline_execution_summary]
 ```
 
+### End-to-end architecture (dynamic, metadata-driven)
+
+```mermaid
+flowchart TD
+		classDef source fill:#D0F0C0,stroke:#333;
+		classDef metadata fill:#A0E7E5,stroke:#333;
+		classDef processing fill:#FFD6A5,stroke:#333;
+		classDef validation fill:#FFADAD,stroke:#333;
+		classDef storage fill:#CBAACB,stroke:#333;
+		classDef orchestrator fill:#B5E48C,stroke:#333;
+
+		A[Data Sources - Auto Policies JSON]:::source
+		B[Metadata Service - JSON Config]:::metadata
+		C[Airflow Orchestrator - Trigger Pipeline]:::orchestrator
+		D[Processing Engine - Dynamic PySpark]:::processing
+		E[Validation Engine - Dynamic Rules]:::validation
+		F[OK Storage - /events]:::storage
+		G[KO Storage - /discards]:::storage
+		H[Logs & Errors - Audit]:::storage
+
+		C -->|Trigger & parameters| D
+		D -->|Reads metadata| B
+		D -->|Reads sources| A
+		D --> D1[Dynamic Transformations]
+		D1 --> E
+		E -->|Valid Data| F
+		E -->|Invalid Data| G
+		E --> H
+```
+
 ### What each task does
 
 1. **extract_config_from_s3**
