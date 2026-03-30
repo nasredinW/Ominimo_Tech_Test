@@ -9,8 +9,9 @@ services:
     working_dir: /app
     volumes:
       - ./data:/app/data
+      - ./airflow_home:/app/airflow
     command: >
-      bash -lc "mkdir -p /app/data/output && chown -R ${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-0} /app/data/output && chmod -R g+rwX /app/data/output"
+      bash -lc "mkdir -p /app/data/output /app/airflow/logs && chown -R ${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-0} /app/data/output /app/airflow/logs && chmod -R g+rwX /app/data/output /app/airflow/logs"
     networks:
       - airflow-network
 
